@@ -1,74 +1,100 @@
-import { useState } from "react";
-import { FiUsers, FiAlertCircle, FiCheckCircle, FiClock } from "react-icons/fi";
+import { useState, useEffect } from "react";
+import { FiUsers, FiAlertCircle, FiCheckCircle, FiClock, FiRefreshCw } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import styles from "../style/AdminDashboard.module.css";
+import { issueService } from "../services/issueService";
 
 export default function AdminDashboard() {
-  const [reports, _setReports] = useState(() => {
-    try {
-      const raw = localStorage.getItem("citycare_reports");
-      if (raw) return JSON.parse(raw);
-    } catch {
-      // ignore parse errors and fallback to sample data
-    }
-    return [
-      {
-        id: 1,
-        title: "Pothole on MG Road",
-        category: "Potholes",
-        location: "MG Road",
-        status: "pending",
-        date: "2025-10-12",
-        description:
-          "Large pothole forming near the center of the road causing vehicles to swerve.",
-        images: [
-          "https://imgs.search.brave.com/6NBxsBN3h08NEwB9wpIjnepZs54_gYZ6gx9PWFohV-A/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWcu/ZnJlZXBpay5jb20v/ZnJlZS1waG90by9i/bGFjay1iYWdzLXRy/YXNoLWdhcmJhZ2Ut/YmluLWRheXRpbWVf/MTgxNjI0LTEzMTUy/LmpwZz9zZW10PWFp/c19oeWJyaWQmdz03/NDAmcT04MA",
-          "https://via.placeholder.com/800x450.png?text=Pothole+2",
-        ],
-        videos: [],
-        coords: { lat: 28.6139, lon: 77.209 },
-      },
-      {
-        id: 2,
-        title: "Broken Street Light",
-        category: "Street Lights",
-        location: "Park Street",
-        status: "in-progress",
-        date: "2025-10-11",
-        description: "Street light flickers at night, leaving the area dark.",
-        images: [
-          "https://imgs.search.brave.com/6NBxsBN3h08NEwB9wpIjnepZs54_gYZ6gx9PWFohV-A/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWcu/ZnJlZXBpay5jb20v/ZnJlZS1waG90by9i/bGFjay1iYWdzLXRy/YXNoLWdhcmJhZ2Ut/YmluLWRheXRpbWVf/MTgxNjI0LTEzMTUy/LmpwZz9zZW10PWFp/c19oeWJyaWQmdz03/NDAmcT04MA",
-        ],
-        videos: [],
-        coords: { lat: 28.6145, lon: 77.2085 },
-      },
-      {
-        id: 3,
-        title: "Overflowing Garbage Bin",
-        category: "Garbage Collection",
-        location: "Market Area",
-        status: "resolved",
-        date: "2025-10-10",
-        description:
-          "Garbage bin not emptied for days, causing unpleasant smell.",
-        images: [
-          "https://imgs.search.brave.com/6NBxsBN3h08NEwB9wpIjnepZs54_gYZ6gx9PWFohV-A/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWcu/ZnJlZXBpay5jb20v/ZnJlZS1waG90by9i/bGFjay1iYWdzLXRy/YXNoLWdhcmJhZ2Ut/YmluLWRheXRpbWVf/MTgxNjI0LTEzMTUy/LmpwZz9zZW10PWFp/c19oeWJyaWQmdz03/NDAmcT04MA",
-        ],
-        videos: [],
-        coords: null,
-      },
-    ];
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    pendingReports: 0,
+    inProgressReports: 0,
+    resolvedReports: 0
   });
+
+  // Fetch data from backend
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      console.log('🔄 AdminDashboard: Fetching dashboard stats...');
+      // Fetch dashboard stats
+      const statsData = await issueService.getDashboardStats();
+      console.log('✅ AdminDashboard: Stats received:', statsData);
+      
+      setStats({
+        totalUsers: statsData.totalUsers || 0,
+        pendingReports: statsData.pendingIssues || 0,
+        inProgressReports: statsData.inProgressIssues || 0,
+        resolvedReports: statsData.resolvedIssues || 0
+      });
+
+      console.log('🔄 AdminDashboard: Fetching all issues...');
+      // Fetch all issues for admin
+      const issues = await issueService.getAllIssues({ sortBy: 'createdAt', order: 'desc' });
+      console.log('✅ AdminDashboard: Issues received:', issues.length, 'issues');
+      
+      // Transform backend data to match frontend format
+      const transformedReports = issues.map((issue) => ({
+        id: issue._id,
+        title: issue.title,
+        category: issue.category,
+        location: issue.location?.address || issue.location || 'Unknown Location',
+        status: issue.status,
+        date: new Date(issue.createdAt).toISOString().slice(0, 10),
+        description: issue.description,
+        images: issue.media?.images?.map(img => img.url) || [],
+        videos: issue.media?.videos?.map(vid => vid.url) || [],
+        coords: issue.location?.coordinates || null,
+        urgency: issue.urgency,
+      }));
+        
+        setReports(transformedReports);
+        console.log('✅ AdminDashboard: Data loaded successfully -', {
+          totalUsers: statsData.totalUsers,
+          pendingReports: statsData.pendingIssues,
+          inProgressReports: statsData.inProgressIssues,
+          resolvedReports: statsData.resolvedIssues,
+          totalReports: transformedReports.length
+        });
+    } catch (err) {
+      console.error('Error fetching admin dashboard data:', err);
+      setError(err.message || 'Failed to load dashboard data');
+      
+      // Fallback to localStorage if backend fails
+      try {
+        const raw = localStorage.getItem("citycare_reports");
+        if (raw) {
+          setReports(JSON.parse(raw));
+        }
+      } catch {
+        setReports([]);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   // derive categories from reports
   const derivedCategories = Array.from(
     new Set(reports.map((r) => r.category).filter(Boolean))
   );
-  const [checkedCategories, setCheckedCategories] = useState(() => {
+  const [checkedCategories, setCheckedCategories] = useState({});
+
+  // Update checked categories when reports change
+  useEffect(() => {
     const map = {};
     derivedCategories.forEach((c) => (map[c] = true));
-    return map;
-  });
+    setCheckedCategories(map);
+  }, [reports.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleCategory = (cat) => {
     setCheckedCategories((prev) => ({ ...prev, [cat]: !prev[cat] }));
@@ -125,91 +151,126 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className={styles.statGrid}>
-          <div
-            className={
-              "bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center " +
-              styles.cardGap +
-              " " +
-              styles.cardPadding
-            }
-          >
-            <div className="bg-green-50 p-3 rounded-lg">
-              <FiUsers className="text-green-600" size={24} />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Total Users</p>
-              <p className="text-xl font-bold text-gray-800">12,342</p>
-            </div>
+        {/* Loading State */}
+        {loading && (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
           </div>
+        )}
 
-          <div
-            className={
-              "bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center " +
-              styles.cardGap +
-              " " +
-              styles.cardPadding
-            }
-          >
-            <div className="bg-yellow-50 p-3 rounded-lg">
-              <FiClock className="text-yellow-600" size={24} />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Pending Reports</p>
-              <p className="text-xl font-bold text-yellow-600">45</p>
-            </div>
+        {/* Error State */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p className="text-red-800 mb-2">{error}</p>
+            <button
+              onClick={fetchData}
+              className="text-red-600 hover:text-red-800 underline text-sm"
+            >
+              Try again
+            </button>
           </div>
+        )}
 
-          <div
-            className={
-              "bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center " +
-              styles.cardGap +
-              " " +
-              styles.cardPadding
-            }
-          >
-            <div className="bg-blue-50 p-3 rounded-lg">
-              <FiAlertCircle className="text-blue-600" size={24} />
+        {/* Stats Grid */}
+        {!loading && !error && (
+          <div className={styles.statGrid}>
+            <div
+              className={
+                "bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center " +
+                styles.cardGap +
+                " " +
+                styles.cardPadding
+              }
+            >
+              <div className="bg-green-50 p-3 rounded-lg">
+                <FiUsers className="text-green-600" size={24} />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Total Users</p>
+                <p className="text-xl font-bold text-gray-800">{stats.totalUsers.toLocaleString()}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm text-gray-500">In Progress</p>
-              <p className="text-xl font-bold text-blue-600">18</p>
-            </div>
-          </div>
 
-          <div
-            className={
-              "bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center " +
-              styles.cardGap +
-              " " +
-              styles.cardPadding
-            }
-          >
-            <div className="bg-green-50 p-3 rounded-lg">
-              <FiCheckCircle className="text-green-600" size={24} />
+            <div
+              className={
+                "bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center " +
+                styles.cardGap +
+                " " +
+                styles.cardPadding
+              }
+            >
+              <div className="bg-yellow-50 p-3 rounded-lg">
+                <FiClock className="text-yellow-600" size={24} />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Pending Reports</p>
+                <p className="text-xl font-bold text-yellow-600">{stats.pendingReports}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm text-gray-500">Resolved</p>
-              <p className="text-xl font-bold text-green-600">312</p>
-            </div>
-          </div>
-        </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className={styles.tablePadding + " border-b border-gray-100"}>
-            <h3 className="font-semibold text-gray-800">Recent Reports</h3>
+            <div
+              className={
+                "bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center " +
+                styles.cardGap +
+                " " +
+                styles.cardPadding
+              }
+            >
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <FiAlertCircle className="text-blue-600" size={24} />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">In Progress</p>
+                <p className="text-xl font-bold text-blue-600">{stats.inProgressReports}</p>
+              </div>
+            </div>
+
+            <div
+              className={
+                "bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center " +
+                styles.cardGap +
+                " " +
+                styles.cardPadding
+              }
+            >
+              <div className="bg-green-50 p-3 rounded-lg">
+                <FiCheckCircle className="text-green-600" size={24} />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Resolved</p>
+                <p className="text-xl font-bold text-green-600">{stats.resolvedReports}</p>
+              </div>
+            </div>
           </div>
-          <div className={styles.tablePadding}>
-            <table className="w-full text-left">
-              <thead>
-                <tr className="text-sm text-gray-500">
-                  <th className={styles.cellY}>Title</th>
-                  <th className={styles.cellY}>Location</th>
-                  <th className={styles.cellY}>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {displayedReports.map((r, idx) => (
+        )}
+
+        {/* Reports Table */}
+        {!loading && !error && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className={styles.tablePadding + " border-b border-gray-100"}>
+              <h3 className="font-semibold text-gray-800">Recent Reports</h3>
+            </div>
+            <div className={styles.tablePadding}>
+              {displayedReports.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-500 mb-2">No reports found</p>
+                  <p className="text-sm text-gray-400">
+                    {reports.length === 0 
+                      ? 'No reports have been submitted yet' 
+                      : 'Try selecting different category filters'}
+                  </p>
+                </div>
+              ) : (
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="text-sm text-gray-500">
+                      <th className={styles.cellY}>Title</th>
+                      <th className={styles.cellY}>Location</th>
+                      <th className={styles.cellY}>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {displayedReports.map((r, idx) => (
                   <tr
                     key={r.id}
                     className={`border-t border-gray-100 ${
@@ -260,8 +321,10 @@ export default function AdminDashboard() {
                 ))}
               </tbody>
             </table>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

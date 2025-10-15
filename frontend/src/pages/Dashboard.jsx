@@ -1,49 +1,125 @@
-import { useState } from 'react'
-import { FiMoreVertical, FiCheckCircle, FiClock, FiAlertCircle, FiUsers } from 'react-icons/fi'
+import { useState, useEffect } from 'react'
+import { FiMoreVertical, FiCheckCircle, FiClock, FiAlertCircle, FiUsers, FiRefreshCw } from 'react-icons/fi'
 import { MdPendingActions, MdCheckCircle } from 'react-icons/md'
 import { HiDocumentReport } from 'react-icons/hi'
+import { issueService } from '../services/issueService'
 
 export default function Dashboard() {
   const [showAllReports, setShowAllReports] = useState(false)
-
-  // Sample data - replace with real API data
-  const stats = [
+  const [stats, setStats] = useState([
     { 
       label: 'Total Issues', 
-      value: '3,256', 
+      value: '0', 
       icon: HiDocumentReport,
       bgColor: 'bg-green-50',
       iconColor: 'text-green-600'
     },
     { 
       label: 'Pending Issues', 
-      value: '394', 
+      value: '0', 
       icon: MdPendingActions,
       bgColor: 'bg-blue-50',
       iconColor: 'text-blue-600'
     },
     { 
       label: 'Resolved Issues', 
-      value: '2,536', 
+      value: '0', 
       icon: FiCheckCircle,
       bgColor: 'bg-green-50',
       iconColor: 'text-green-600'
     },
-  ]
-              
+  ])
+  const [allReports, setAllReports] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const allReports = [
-    { id: 1, issue: 'Pothole on MG Road', location: 'MG Road, Sector 5', status: 'pending', time: '2 hours ago' },
-    { id: 2, issue: 'Broken Street Light', location: 'Park Street, Zone B', status: 'in-progress', time: '5 hours ago' },
-    { id: 3, issue: 'Overflowing Garbage Bin', location: 'Market Area, Ward 3', status: 'resolved', time: '1 day ago' },
-    { id: 4, issue: 'No Water Supply', location: 'Green Valley, Block C', status: 'pending', time: '3 hours ago' },
-    { id: 5, issue: 'Damaged Road Sign', location: 'Highway 45, Mile Marker 12', status: 'in-progress', time: '4 hours ago' },
-    { id: 6, issue: 'Illegal Dumping', location: 'Industrial Area, Sector 9', status: 'pending', time: '6 hours ago' },
-    { id: 7, issue: 'Broken Traffic Signal', location: 'Main Street & 5th Avenue', status: 'resolved', time: '1 day ago' },
-    { id: 8, issue: 'Stray Animals', location: 'Residential Area, Block D', status: 'pending', time: '8 hours ago' },
-    { id: 9, issue: 'Tree Trimming Needed', location: 'Central Park, East Side', status: 'in-progress', time: '12 hours ago' },
-    { id: 10, issue: 'Footpath Repair', location: 'Shopping District, Zone A', status: 'resolved', time: '2 days ago' },
-  ]
+  // Fetch dashboard data from backend
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        // Fetch dashboard stats
+        const statsData = await issueService.getDashboardStats()
+        
+        // Update stats with fetched data
+        setStats([
+          { 
+            label: 'Total Issues', 
+            value: statsData.totalIssues.toString(), 
+            icon: HiDocumentReport,
+            bgColor: 'bg-green-50',
+            iconColor: 'text-green-600'
+          },
+          { 
+            label: 'Pending Issues', 
+            value: statsData.pendingIssues.toString(), 
+            icon: MdPendingActions,
+            bgColor: 'bg-blue-50',
+            iconColor: 'text-blue-600'
+          },
+          { 
+            label: 'Resolved Issues', 
+            value: statsData.resolvedIssues.toString(), 
+            icon: FiCheckCircle,
+            bgColor: 'bg-green-50',
+            iconColor: 'text-green-600'
+          },
+        ])
+
+        // Fetch recent issues
+        const issues = await issueService.getAllIssues({ limit: 10, sortBy: 'createdAt', order: 'desc' })
+        
+        // Transform backend data to match frontend format
+        const transformedReports = issues.map((issue) => ({
+          id: issue._id,
+          issue: issue.title,
+          location: issue.location?.address || issue.location || 'Unknown Location',
+          status: issue.status,
+          time: getRelativeTime(issue.createdAt),
+        }))
+        
+        setAllReports(transformedReports)
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err)
+        setError(err.message || 'Failed to load dashboard data')
+        
+        // Fallback to localStorage if backend fails
+        try {
+          const localReports = JSON.parse(localStorage.getItem('citycare_reports') || '[]')
+          const transformedLocal = localReports.map((report) => ({
+            id: report.id,
+            issue: report.title,
+            location: report.location,
+            status: report.status,
+            time: getRelativeTime(report.date),
+          }))
+          setAllReports(transformedLocal)
+        } catch {
+          setAllReports([])
+        }
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchDashboardData()
+  }, [])
+
+  // Helper function to get relative time
+  const getRelativeTime = (dateString) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now - date
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 60) return `${diffMins} ${diffMins === 1 ? 'minute' : 'minutes'} ago`
+    if (diffHours < 24) return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`
+    return `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`
+  }
 
   // Show only first 5 reports initially, all when "View All" is clicked
   const recentReports = showAllReports ? allReports : allReports.slice(0, 5)
@@ -96,40 +172,93 @@ export default function Dashboard() {
           </div>
           
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gray-50">
-                  <th className="text-left text-sm font-semibold text-gray-600 uppercase tracking-wider" style={{ padding: '16px 32px' }}>Issue</th>
-                  <th className="text-left text-sm font-semibold text-gray-600 uppercase tracking-wider" style={{ padding: '16px 32px' }}>Location</th>
-                  <th className="text-left text-sm font-semibold text-gray-600 uppercase tracking-wider" style={{ padding: '16px 32px' }}>Status</th>
-                  <th className="text-left text-sm font-semibold text-gray-600 uppercase tracking-wider" style={{ padding: '16px 32px' }}>Time</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentReports.map((report) => (
-                  <tr key={report.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                    <td className="text-sm font-medium text-gray-800" style={{ padding: '20px 32px' }}>{report.issue}</td>
-                    <td className="text-sm text-gray-600" style={{ padding: '20px 32px' }}>{report.location}</td>
-                    <td style={{ padding: '20px 32px' }}>
-                      <span 
-                        className={`inline-flex items-center gap-1.5 rounded-full text-xs font-semibold ${
-                          report.status === 'resolved' 
-                            ? 'bg-green-50 text-green-700 border border-green-200' 
-                            : report.status === 'in-progress'
-                            ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                            : 'bg-yellow-50 text-yellow-700 border border-yellow-200'
-                        }`}
-                        style={{ padding: '6px 16px' }}
-                      >
-                        {report.status === 'resolved' ? <FiCheckCircle size={14} /> : <FiClock size={14} />}
-                        {report.status}
-                      </span>
-                    </td>
-                    <td className="text-sm text-gray-500" style={{ padding: '20px 32px' }}>{report.time}</td>
+            {loading ? (
+              <div className="text-center" style={{ padding: '80px 48px' }}>
+                <FiRefreshCw
+                  className="text-green-600 mx-auto animate-spin"
+                  size={48}
+                  style={{ marginBottom: '16px' }}
+                />
+                <h3 className="text-lg font-semibold text-gray-800" style={{ marginBottom: '8px' }}>
+                  Loading reports...
+                </h3>
+                <p className="text-gray-600">
+                  Please wait while we fetch the data.
+                </p>
+              </div>
+            ) : error ? (
+              <div className="text-center" style={{ padding: '80px 48px' }}>
+                <FiAlertCircle
+                  className="text-red-500 mx-auto"
+                  size={48}
+                  style={{ marginBottom: '16px' }}
+                />
+                <h3 className="text-lg font-semibold text-gray-800" style={{ marginBottom: '8px' }}>
+                  Error loading reports
+                </h3>
+                <p className="text-gray-600" style={{ marginBottom: '16px' }}>
+                  {error}
+                </p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors"
+                  style={{ padding: '10px 24px' }}
+                >
+                  Try Again
+                </button>
+              </div>
+            ) : recentReports.length === 0 ? (
+              <div className="text-center" style={{ padding: '80px 48px' }}>
+                <FiAlertCircle
+                  className="text-gray-400 mx-auto"
+                  size={48}
+                  style={{ marginBottom: '16px' }}
+                />
+                <h3 className="text-lg font-semibold text-gray-800" style={{ marginBottom: '8px' }}>
+                  No reports yet
+                </h3>
+                <p className="text-gray-600">
+                  Be the first to report a civic issue in your area!
+                </p>
+              </div>
+            ) : (
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="text-left text-sm font-semibold text-gray-600 uppercase tracking-wider" style={{ padding: '16px 32px' }}>Issue ID</th>
+                    <th className="text-left text-sm font-semibold text-gray-600 uppercase tracking-wider" style={{ padding: '16px 32px' }}>Issue</th>
+                    <th className="text-left text-sm font-semibold text-gray-600 uppercase tracking-wider" style={{ padding: '16px 32px' }}>Location</th>
+                    <th className="text-left text-sm font-semibold text-gray-600 uppercase tracking-wider" style={{ padding: '16px 32px' }}>Status</th>
+                    <th className="text-left text-sm font-semibold text-gray-600 uppercase tracking-wider" style={{ padding: '16px 32px' }}>Time</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {recentReports.map((report) => (
+                    <tr key={report.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      <td className="text-xs text-gray-500 font-mono" style={{ padding: '20px 32px' }}>{report.id.slice(-8)}</td>
+                      <td className="text-sm font-medium text-gray-800" style={{ padding: '20px 32px' }}>{report.issue}</td>
+                      <td className="text-sm text-gray-600" style={{ padding: '20px 32px' }}>{report.location}</td>
+                      <td style={{ padding: '20px 32px' }}>
+                        <span 
+                          className={`inline-flex items-center gap-1.5 rounded-full text-xs font-semibold ${
+                            report.status === 'resolved' 
+                              ? 'bg-green-50 text-green-700 border border-green-200' 
+                              : report.status === 'in-progress'
+                              ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                              : 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+                          }`}
+                          style={{ padding: '6px 16px' }}
+                        >
+                          {report.status === 'resolved' ? <FiCheckCircle size={14} /> : <FiClock size={14} />}
+                          {report.status}
+                        </span>
+                      </td>
+                      <td className="text-sm text-gray-500" style={{ padding: '20px 32px' }}>{report.time}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       </div>

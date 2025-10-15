@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "@clerk/clerk-react";
 import {
   FiClock,
   FiCheckCircle,
@@ -14,66 +15,66 @@ import {
 } from "react-icons/fi";
 import { HiDocumentReport } from "react-icons/hi";
 import { MdAccessTime } from "react-icons/md";
+import { issueService } from "../services/issueService";
 
 export default function MyReports() {
   const navigate = useNavigate();
+  const { user } = useUser();
   const [filter, setFilter] = useState("all");
   const [sortBy, setSortBy] = useState("recent");
   const [selectedReport, setSelectedReport] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const reports = [
-    {
-      id: 1,
-      title: "Pothole on MG Road",
-      category: "Potholes",
-      location: "MG Road, Sector 5",
-      status: "pending",
-      date: "2025-10-12",
-      urgency: "high",
-      description: "Large pothole causing traffic issues",
-    },
-    {
-      id: 2,
-      title: "Broken Street Light",
-      category: "Street Lights",
-      location: "Park Street, Zone B",
-      status: "in-progress",
-      date: "2025-10-11",
-      urgency: "medium",
-      description: "Street light not working for 3 days",
-    },
-    {
-      id: 3,
-      title: "Overflowing Garbage Bin",
-      category: "Garbage Collection",
-      location: "Market Area, Ward 3",
-      status: "resolved",
-      date: "2025-10-10",
-      urgency: "medium",
-      description: "Garbage bin overflowing near market",
-    },
-    {
-      id: 4,
-      title: "No Water Supply",
-      category: "Water Supply",
-      location: "Green Valley, Block C",
-      status: "pending",
-      date: "2025-10-13",
-      urgency: "critical",
-      description: "No water supply since morning",
-    },
-    {
-      id: 5,
-      title: "Broken Park Bench",
-      category: "Public Property Damage",
-      location: "Central Park",
-      status: "resolved",
-      date: "2025-10-08",
-      urgency: "low",
-      description: "Park bench needs repair",
-    },
-  ];
+  // Fetch user's reports from backend
+  useEffect(() => {
+    const fetchReports = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await issueService.getUserIssues(user.id);
+        
+        // Transform backend data to match frontend format
+        const transformedReports = data.map((issue) => ({
+          id: issue._id,
+          title: issue.title,
+          category: issue.category,
+          location: issue.location?.address || issue.location || 'Unknown Location',
+          status: issue.status,
+          date: new Date(issue.createdAt).toISOString().slice(0, 10),
+          urgency: issue.urgency,
+          description: issue.description,
+          images: issue.media?.images || [],
+          videos: issue.media?.videos || [],
+          updates: issue.updates || [],
+        }));
+        
+        setReports(transformedReports);
+      } catch (err) {
+        console.error("Error fetching reports:", err);
+        setError(err.message || "Failed to load reports");
+        
+        // Fallback to localStorage if backend fails
+        try {
+          const localReports = JSON.parse(localStorage.getItem("citycare_reports") || "[]");
+          setReports(localReports);
+        } catch {
+          setReports([]);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReports();
+  }, [user]);
 
   const filteredReports =
     filter === "all" ? reports : reports.filter((r) => r.status === filter);
@@ -128,6 +129,34 @@ export default function MyReports() {
         return "text-gray-600";
     }
   };
+
+  // Show sign-in message if user is not authenticated
+  if (!user) {
+    return (
+      <div className="bg-gray-50 min-h-screen flex items-center justify-center" style={{ padding: "40px" }}>
+        <div className="text-center">
+          <FiAlertCircle
+            className="text-green-600 mx-auto"
+            size={64}
+            style={{ marginBottom: "24px" }}
+          />
+          <h2 className="text-2xl font-bold text-gray-800" style={{ marginBottom: "12px" }}>
+            Sign in to view your reports
+          </h2>
+          <p className="text-gray-600" style={{ marginBottom: "24px" }}>
+            Please sign in to access your submitted civic issues.
+          </p>
+          <button
+            onClick={() => navigate("/")}
+            className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors"
+            style={{ padding: "12px 32px" }}
+          >
+            Go to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-50 min-h-screen" style={{ padding: "40px" }}>
@@ -240,7 +269,48 @@ export default function MyReports() {
           </div>
 
           <div className="divide-y divide-gray-100">
-            {sortedReports.length === 0 ? (
+            {loading ? (
+              <div className="text-center" style={{ padding: "80px 48px" }}>
+                <FiRefreshCw
+                  className="text-green-600 mx-auto animate-spin"
+                  size={48}
+                  style={{ marginBottom: "16px" }}
+                />
+                <h3
+                  className="text-lg font-semibold text-gray-800"
+                  style={{ marginBottom: "8px" }}
+                >
+                  Loading your reports...
+                </h3>
+                <p className="text-gray-600">
+                  Please wait while we fetch your data.
+                </p>
+              </div>
+            ) : error ? (
+              <div className="text-center" style={{ padding: "80px 48px" }}>
+                <FiAlertCircle
+                  className="text-red-500 mx-auto"
+                  size={48}
+                  style={{ marginBottom: "16px" }}
+                />
+                <h3
+                  className="text-lg font-semibold text-gray-800"
+                  style={{ marginBottom: "8px" }}
+                >
+                  Error loading reports
+                </h3>
+                <p className="text-gray-600" style={{ marginBottom: "16px" }}>
+                  {error}
+                </p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors"
+                  style={{ padding: "10px 24px" }}
+                >
+                  Try Again
+                </button>
+              </div>
+            ) : sortedReports.length === 0 ? (
               <div className="text-center" style={{ padding: "80px 48px" }}>
                 <FiInbox
                   className="text-gray-400 mx-auto"
@@ -274,10 +344,13 @@ export default function MyReports() {
                         <div>
                           <h3
                             className="text-lg font-semibold text-gray-800"
-                            style={{ marginBottom: "8px" }}
+                            style={{ marginBottom: "4px" }}
                           >
                             {report.title}
                           </h3>
+                          <p className="text-xs text-gray-500 font-mono" style={{ marginBottom: "8px" }}>
+                            Issue ID: {report.id}
+                          </p>
                           <div
                             className="flex items-center text-sm text-gray-600"
                             style={{ gap: "16px" }}
@@ -411,10 +484,13 @@ export default function MyReports() {
               <div>
                 <h2
                   className="text-2xl font-bold text-gray-800"
-                  style={{ marginBottom: "8px" }}
+                  style={{ marginBottom: "4px" }}
                 >
                   {selectedReport.title}
                 </h2>
+                <p className="text-xs text-gray-500 font-mono" style={{ marginBottom: "8px" }}>
+                  Issue ID: {selectedReport.id}
+                </p>
                 <span
                   className={`inline-block rounded-full text-xs font-semibold border ${getStatusColor(
                     selectedReport.status

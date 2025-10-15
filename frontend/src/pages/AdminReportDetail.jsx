@@ -1,54 +1,132 @@
 import { useLocation, useParams, Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "../style/AdminDashboard.module.css";
+import { issueService } from "../services/issueService";
 
 export default function AdminReportDetail() {
   const { id } = useParams();
   const location = useLocation();
-  // Try to read report from location.state first (passed from dashboard link)
-  const report = location.state?.report;
+  
+  // State management
+  const [mutableReport, setMutableReport] = useState(location.state?.report || null);
+  const [loading, setLoading] = useState(!location.state?.report);
+  const [error, setError] = useState(null);
+  const [updating, setUpdating] = useState(false);
 
-  // if we have report data, keep a mutable copy for local updates
-  const [mutableReport, setMutableReport] = useState(
-    report ? { ...report } : null
-  );
+  // Fetch report from backend if not provided via state
+  useEffect(() => {
+    if (!mutableReport && id) {
+      fetchReport();
+    }
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const saveOverride = (id, patch) => {
+  const fetchReport = async () => {
     try {
-      const raw = localStorage.getItem("citycare_report_overrides") || "{}";
-      const map = JSON.parse(raw);
-      map[id] = { ...(map[id] || {}), ...patch };
-      localStorage.setItem("citycare_report_overrides", JSON.stringify(map));
-    } catch (e) {
-      console.error("failed to save override", e);
+      setLoading(true);
+      setError(null);
+      console.log('🔄 AdminReportDetail: Fetching report:', id);
+      
+      const issue = await issueService.getIssueById(id);
+      console.log('✅ AdminReportDetail: Report received:', issue);
+      
+      // Transform backend data to match frontend format
+      const transformedReport = {
+        id: issue._id,
+        title: issue.title,
+        category: issue.category,
+        location: issue.location?.address || issue.location || 'Unknown Location',
+        status: issue.status,
+        date: new Date(issue.createdAt).toISOString().slice(0, 10),
+        description: issue.description,
+        images: issue.media?.images?.map(img => img.url) || [],
+        videos: issue.media?.videos?.map(vid => vid.url) || [],
+        coords: issue.location?.coordinates || null,
+        urgency: issue.urgency,
+      };
+      
+      setMutableReport(transformedReport);
+    } catch (err) {
+      console.error('❌ AdminReportDetail: Error fetching report:', err);
+      setError(err.message || 'Failed to load report');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const updateStatus = (newStatus) => {
+  // Update status via backend API
+  const updateStatus = async (newStatus) => {
     if (!mutableReport) return;
-    const updated = { ...mutableReport, status: newStatus };
-    setMutableReport(updated);
-    saveOverride(mutableReport.id, { status: newStatus });
+    
+    try {
+      setUpdating(true);
+      console.log('🔄 AdminReportDetail: Updating status to:', newStatus);
+      
+      await issueService.updateIssue(mutableReport.id, { status: newStatus });
+      
+      const updated = { ...mutableReport, status: newStatus };
+      setMutableReport(updated);
+      console.log('✅ AdminReportDetail: Status updated successfully');
+    } catch (err) {
+      console.error('❌ AdminReportDetail: Error updating status:', err);
+      alert('Failed to update status: ' + err.message);
+    } finally {
+      setUpdating(false);
+    }
   };
 
-  // If not provided via state, show a fallback message (could be extended to fetch by id)
-  if (!report) {
+  // Loading state
+  if (loading) {
     return (
       <div className={styles.container}>
         <div className={styles.inner}>
-          <h2 className="text-xl font-semibold">Report Details</h2>
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.inner}>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p className="text-red-800 mb-2">{error}</p>
+            <button
+              onClick={fetchReport}
+              className="text-red-600 hover:text-red-800 underline text-sm mr-4"
+            >
+              Try again
+            </button>
+            <Link
+              to="/admin"
+              className="text-blue-600 hover:text-blue-800 underline text-sm"
+            >
+              Back to Admin
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // No report found
+  if (!mutableReport) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.inner}>
+          <h2 className="text-xl font-semibold">Report Not Found</h2>
           <p style={{ marginTop: 16 }} className="text-gray-600">
-            No report data was provided for id: {id}.
-          </p>
-          <p style={{ marginTop: 8 }} className="text-sm text-gray-500">
-            You can extend this page to fetch the report by id from the backend.
+            No report found with id: {id}
           </p>
           <Link
             to="/admin"
             style={{ marginTop: 16, display: "inline-block" }}
             className="text-blue-600 hover:underline"
           >
-            Back to admin
+            Back to Admin
           </Link>
         </div>
       </div>
@@ -69,10 +147,10 @@ export default function AdminReportDetail() {
         </div>
 
         <h2 className="text-2xl font-bold text-gray-800">
-          {mutableReport ? mutableReport.title : report.title}
+          {mutableReport.title}
         </h2>
         <p className="text-sm text-gray-600">
-          Category: {mutableReport ? mutableReport.category : report.category}
+          Category: {mutableReport.category}
         </p>
         <div
           style={{
@@ -88,31 +166,29 @@ export default function AdminReportDetail() {
             className="text-sm text-gray-700"
             style={{ padding: "8px 0", borderBottom: "1px solid #f3f4f6" }}
           >
-            <strong>Location:</strong>{" "}
-            {mutableReport ? mutableReport.location : report.location}
+            <strong>Location:</strong> {mutableReport.location}
           </p>
           <p
             className="text-sm text-gray-700"
             style={{ padding: "8px 0", borderBottom: "1px solid #f3f4f6" }}
           >
-            <strong>Status:</strong>{" "}
-            {mutableReport ? mutableReport.status : report.status}
+            <strong>Status:</strong> {mutableReport.status}
           </p>
           <p className="text-sm text-gray-700" style={{ padding: "8px 0" }}>
-            <strong>Date:</strong> {report.date}
+            <strong>Date:</strong> {mutableReport.date}
           </p>
 
-          {report.description && (
+          {mutableReport.description && (
             <div style={{ marginTop: 12 }} className="text-gray-700">
               <strong>Details:</strong>
               <p style={{ marginTop: 4 }}>
-                {mutableReport ? mutableReport.description : report.description}
+                {mutableReport.description}
               </p>
             </div>
           )}
 
           {/* Images gallery */}
-          {report.images && report.images.length > 0 && (
+          {mutableReport.images && mutableReport.images.length > 0 && (
             <div style={{ marginTop: 20 }}>
               <strong>Images</strong>
               <div
@@ -123,11 +199,11 @@ export default function AdminReportDetail() {
                   marginTop: 12,
                 }}
               >
-                {report.images.map((src, i) => (
+                {mutableReport.images.map((src, i) => (
                   <img
                     key={i}
-                    src={src }
-                    alt={`report-${report.id}-${i}`}
+                    src={src}
+                    alt={`report-${mutableReport.id}-${i}`}
                     style={{
                       width: "100%",
                       borderRadius: 10,
@@ -140,7 +216,7 @@ export default function AdminReportDetail() {
           )}
 
           {/* Videos */}
-          {report.videos && report.videos.length > 0 && (
+          {mutableReport.videos && mutableReport.videos.length > 0 && (
             <div style={{ marginTop: 20 }}>
               <strong>Videos</strong>
               <div
@@ -151,7 +227,7 @@ export default function AdminReportDetail() {
                   gap: 18,
                 }}
               >
-                {report.videos.map((src, i) => (
+                {mutableReport.videos.map((src, i) => (
                   <video
                     key={i}
                     controls
@@ -170,12 +246,12 @@ export default function AdminReportDetail() {
           )}
 
           {/* Location / Map link */}
-          {report.coords && report.coords.lat && report.coords.lon && (
+          {mutableReport.coords && mutableReport.coords.lat && mutableReport.coords.lng && (
             <div style={{ marginTop: 16 }}>
               <strong>Location on map</strong>
               <div style={{ marginTop: 8 }}>
                 <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${report.coords.lat},${report.coords.lon}`}
+                  href={`https://www.google.com/maps/search/?api=1&query=${mutableReport.coords.lat},${mutableReport.coords.lng}`}
                   target="_blank"
                   rel="noreferrer"
                   className="text-blue-600 hover:underline"
@@ -187,18 +263,39 @@ export default function AdminReportDetail() {
           )}
         </div>
 
-        {/* Admin resolved CTA at the end of the page */}
+        {/* Admin status update buttons */}
         {mutableReport && (
           <div
             style={{
               marginTop: 20,
               display: "flex",
               justifyContent: "flex-end",
+              gap: 12,
             }}
           >
             <button
+              onClick={() => updateStatus("in-progress")}
+              disabled={updating || mutableReport.status === "in-progress"}
+              aria-label="Mark in progress by admin"
+              style={{
+                padding: "10px 16px",
+                background:
+                  mutableReport.status === "in-progress" ? "#1e40af" : "#3b82f6",
+                color: "white",
+                borderRadius: 8,
+                border: "none",
+                cursor:
+                  updating || mutableReport.status === "in-progress"
+                    ? "not-allowed"
+                    : "pointer",
+                opacity: updating || mutableReport.status === "in-progress" ? 0.6 : 1,
+              }}
+            >
+              {updating ? "Updating..." : mutableReport.status === "in-progress" ? "In Progress" : "Mark In Progress"}
+            </button>
+            <button
               onClick={() => updateStatus("resolved")}
-              disabled={mutableReport.status === "resolved"}
+              disabled={updating || mutableReport.status === "resolved"}
               aria-label="Mark resolved by admin"
               style={{
                 padding: "10px 16px",
@@ -208,19 +305,17 @@ export default function AdminReportDetail() {
                 borderRadius: 8,
                 border: "none",
                 cursor:
-                  mutableReport.status === "resolved"
+                  updating || mutableReport.status === "resolved"
                     ? "not-allowed"
                     : "pointer",
+                opacity: updating || mutableReport.status === "resolved" ? 0.6 : 1,
                 boxShadow:
                   mutableReport.status === "resolved"
                     ? "0 1px 0 rgba(0,0,0,0.05) inset"
                     : "0 6px 18px rgba(5,150,105,0.18)",
               }}
             >
-              {mutableReport.status === "resolved"
-                ? // show a clear check label when resolved
-                  "Resolved"
-                : "Mark Resolved "}
+              {updating ? "Updating..." : mutableReport.status === "resolved" ? "Resolved" : "Mark Resolved"}
             </button>
           </div>
         )}

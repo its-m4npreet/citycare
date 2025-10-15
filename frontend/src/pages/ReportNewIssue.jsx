@@ -11,11 +11,15 @@ import {
   FiInfo,
   FiX,
 } from "react-icons/fi";
+import { issueService } from "../services/issueService";
+import { useUser } from "../hooks/useUser";
 
 export default function ReportNewIssue() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { clerkUser: user, dbUser, loading: userLoading } = useUser();
   const updateReport = location.state?.updateReport;
+  const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -78,13 +82,88 @@ export default function ReportNewIssue() {
     "Other",
   ];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(
-      updateReport ? "Report updated:" : "Report submitted:",
-      formData
-    );
-    // Persist report to localStorage (client-only)
+    
+    if (!user) {
+      alert('Please sign in to report an issue');
+      return;
+    }
+
+    if (userLoading) {
+      alert('Please wait while we sync your account...');
+      return;
+    }
+
+    if (!dbUser) {
+      const retry = window.confirm(
+        'Unable to sync your account with the database.\n\n' +
+        'This could be because:\n' +
+        '- Backend server is not running\n' +
+        '- Network connection issue\n' +
+        '- Database connection problem\n\n' +
+        'Click OK to reload the page and try again, or Cancel to continue anyway.'
+      );
+      
+      if (retry) {
+        window.location.reload();
+        return;
+      }
+      
+      // If user chooses to continue, log a warning but allow submission
+      console.warn('⚠️ Proceeding without database user sync');
+    }
+
+    setSubmitting(true);
+
+    try {
+      // Prepare issue data
+      const issueData = {
+        clerkId: user.id,
+        title: formData.title,
+        category: formData.category,
+        description: formData.description,
+        location: formData.location,
+        urgency: formData.urgency,
+        coordinates: formData.coordinates,
+      };
+
+      console.log('📝 Submitting issue data:', issueData);
+
+      // Prepare files
+      const files = {};
+      if (formData.images.length > 0) {
+        files.image = formData.images[0].file;
+        console.log('📸 Image file:', files.image.name);
+      }
+      if (formData.videos.length > 0) {
+        files.video = formData.videos[0].file;
+        console.log('🎥 Video file:', files.video.name);
+      }
+
+      // Submit to backend
+      console.log('🚀 Sending request to backend...');
+      const response = await issueService.createIssue(issueData, files);
+      console.log('✅ Backend response:', response);
+      
+      console.log('Issue created successfully:', response);
+      
+      // Show success message with Issue ID
+      const issueId = response._id || response.id || 'Unknown';
+      alert(
+        updateReport 
+          ? `Report updated successfully!\nIssue ID: ${issueId}` 
+          : `Issue reported successfully!\nIssue ID: ${issueId}\n\nYou can view it in My Reports page.`
+      );
+      navigate('/my-reports');
+    } catch (error) {
+      console.error('Error submitting issue:', error);
+      alert(`Error: ${error.message || 'Failed to submit issue. Please try again.'}`);
+    } finally {
+      setSubmitting(false);
+    }
+    
+    // Fallback: Also persist to localStorage for offline access
     try {
       const existingRaw = localStorage.getItem("citycare_reports") || "[]";
       const existing = JSON.parse(existingRaw);
@@ -97,8 +176,8 @@ export default function ReportNewIssue() {
         location: formData.location,
         coords: formData.coordinates,
         urgency: formData.urgency,
-        images: formData.images.map((f) => f.url),
-        videos: formData.videos.map((f) => f.url),
+        images: formData.images.map((f) => f.url || ''),
+        videos: formData.videos.map((f) => f.url || ''),
         date: new Date().toISOString().slice(0, 10),
         status: "pending",
       };
@@ -438,7 +517,7 @@ export default function ReportNewIssue() {
                           ...prev,
                           images: [
                             ...prev.images,
-                            { name: file.name, url, size: file.size },
+                            { name: file.name, url, size: file.size, file },
                           ],
                         }));
                       } else if (isVideo) {
@@ -453,7 +532,7 @@ export default function ReportNewIssue() {
                           ...prev,
                           videos: [
                             ...prev.videos,
-                            { name: file.name, url, size: file.size },
+                            { name: file.name, url, size: file.size, file },
                           ],
                         }));
                       }
@@ -553,11 +632,12 @@ export default function ReportNewIssue() {
             <div className="flex" style={{ gap: "16px", paddingTop: "16px" }}>
               <button
                 type="submit"
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors flex items-center justify-center"
+                disabled={submitting}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed"
                 style={{ padding: "14px 24px", gap: "8px" }}
               >
                 <FiSend size={20} />
-                {updateReport ? "Update Report" : "Submit Report"}
+                {submitting ? "Submitting..." : (updateReport ? "Update Report" : "Submit Report")}
               </button>
               <button
                 type="button"
