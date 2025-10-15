@@ -39,12 +39,21 @@ exports.createIssue = async (req, res) => {
     if (coordinates) {
       if (typeof coordinates === 'string') {
         try {
-          parsedCoordinates = JSON.parse(coordinates);
+          const parsed = JSON.parse(coordinates);
+          // Convert lat/lng to latitude/longitude format
+          parsedCoordinates = {
+            latitude: parsed.lat || parsed.latitude,
+            longitude: parsed.lng || parsed.longitude
+          };
         } catch (e) {
           console.warn('Failed to parse coordinates:', e);
         }
       } else {
-        parsedCoordinates = coordinates;
+        // Convert lat/lng to latitude/longitude format
+        parsedCoordinates = {
+          latitude: coordinates.lat || coordinates.latitude,
+          longitude: coordinates.lng || coordinates.longitude
+        };
       }
     }
 
@@ -179,12 +188,19 @@ exports.getUserIssues = async (req, res) => {
     const { clerkId } = req.params;
     const { status } = req.query;
 
+    console.log('🔍 getUserIssues - clerkId:', clerkId);
+    console.log('🔍 getUserIssues - status filter:', status);
+
     // Build filter
     const filter = { clerkId };
     if (status) filter.status = status;
 
+    console.log('🔍 Query filter:', JSON.stringify(filter, null, 2));
+
     const issues = await Issue.find(filter)
       .sort({ createdAt: -1 });
+
+    console.log('✅ Found issues:', issues.length);
 
     res.status(200).json({
       success: true,
@@ -192,7 +208,8 @@ exports.getUserIssues = async (req, res) => {
       data: issues
     });
   } catch (error) {
-    console.error('Error in getUserIssues:', error);
+    console.error('❌ Error in getUserIssues:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,
       message: 'Error fetching user issues',

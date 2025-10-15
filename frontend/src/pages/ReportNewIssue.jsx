@@ -553,7 +553,7 @@ export default function ReportNewIssue() {
                 </label>
 
                 {/* Display selected files */}
-                {(formData.image || formData.video) && (
+                {(formData.images.length > 0 || formData.videos.length > 0) && (
                   <div
                     style={{
                       marginTop: "16px",
@@ -562,9 +562,11 @@ export default function ReportNewIssue() {
                       flexDirection: "column",
                     }}
                   >
-                    {formData.image && (
+                    {/* Display Images */}
+                    {formData.images.map((img, index) => (
                       <div
-                        className="text-sm text-green-700 font-medium flex items-center justify-between"
+                        key={`image-${index}`}
+                        className="text-sm text-green-700 font-medium"
                         style={{
                           padding: "12px",
                           backgroundColor: "#f0fdf4",
@@ -572,29 +574,49 @@ export default function ReportNewIssue() {
                           border: "1px solid #bbf7d0",
                         }}
                       >
-                        <span
-                          className="flex items-center"
-                          style={{ gap: "8px" }}
-                        >
-                          <FiCamera size={16} />
-                          Photo: {formData.image.name}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setFormData((prev) => ({ ...prev, image: null }));
-                            document.getElementById("media-upload").value = "";
+                        <div className="flex items-center justify-between mb-2">
+                          <span
+                            className="flex items-center"
+                            style={{ gap: "8px" }}
+                          >
+                            <FiCamera size={16} />
+                            Photo: {img.name} ({(img.size / (1024 * 1024)).toFixed(2)} MB)
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              URL.revokeObjectURL(img.url);
+                              setFormData((prev) => ({
+                                ...prev,
+                                images: prev.images.filter((_, i) => i !== index),
+                              }));
+                            }}
+                            className="text-red-500 hover:text-red-700 font-bold"
+                            style={{ fontSize: "18px" }}
+                          >
+                            <FiX />
+                          </button>
+                        </div>
+                        {/* Image Preview */}
+                        <img
+                          src={img.url}
+                          alt={`Preview ${index + 1}`}
+                          style={{
+                            width: "100%",
+                            maxHeight: "200px",
+                            objectFit: "cover",
+                            borderRadius: "6px",
+                            border: "1px solid #bbf7d0",
                           }}
-                          className="text-red-500 hover:text-red-700 font-bold"
-                          style={{ fontSize: "18px" }}
-                        >
-                          <FiX />
-                        </button>
+                        />
                       </div>
-                    )}
-                    {formData.video && (
+                    ))}
+
+                    {/* Display Videos */}
+                    {formData.videos.map((vid, index) => (
                       <div
-                        className="text-sm text-blue-700 font-medium flex items-center justify-between"
+                        key={`video-${index}`}
+                        className="text-sm text-blue-700 font-medium"
                         style={{
                           padding: "12px",
                           backgroundColor: "#eff6ff",
@@ -602,27 +624,44 @@ export default function ReportNewIssue() {
                           border: "1px solid #bfdbfe",
                         }}
                       >
-                        <span
-                          className="flex items-center"
-                          style={{ gap: "8px" }}
-                        >
-                          <FiVideo size={16} />
-                          Video: {formData.video.name} (
-                          {(formData.video.size / (1024 * 1024)).toFixed(2)} MB)
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setFormData((prev) => ({ ...prev, video: null }));
-                            document.getElementById("media-upload").value = "";
+                        <div className="flex items-center justify-between mb-2">
+                          <span
+                            className="flex items-center"
+                            style={{ gap: "8px" }}
+                          >
+                            <FiVideo size={16} />
+                            Video: {vid.name} ({(vid.size / (1024 * 1024)).toFixed(2)} MB)
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              URL.revokeObjectURL(vid.url);
+                              setFormData((prev) => ({
+                                ...prev,
+                                videos: prev.videos.filter((_, i) => i !== index),
+                              }));
+                            }}
+                            className="text-red-500 hover:text-red-700 font-bold"
+                            style={{ fontSize: "18px" }}
+                          >
+                            <FiX />
+                          </button>
+                        </div>
+                        {/* Video Preview */}
+                        <video
+                          controls
+                          style={{
+                            width: "100%",
+                            maxHeight: "200px",
+                            borderRadius: "6px",
+                            border: "1px solid #bfdbfe",
                           }}
-                          className="text-red-500 hover:text-red-700 font-bold"
-                          style={{ fontSize: "18px" }}
                         >
-                          <FiX />
-                        </button>
+                          <source src={vid.url} type={vid.file?.type} />
+                          Your browser does not support the video tag.
+                        </video>
                       </div>
-                    )}
+                    ))}
                   </div>
                 )}
               </div>
