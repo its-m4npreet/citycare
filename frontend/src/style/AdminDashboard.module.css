@@ -1,0 +1,43 @@
+.container {
+  padding: 32px; /* replaces p-8 */
+  min-height: 100vh;
+  background-color: #f9fafb; /* gray-50 */
+}
+.inner {
+  max-width: 1120px; /* approx max-w-7xl */
+  margin: 0 auto;
+}
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px; /* replaces mb-6 */
+}
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+@media (min-width: 768px) {
+  .statGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+.cardPadding {
+  padding: 24px;
+} /* replaces p-6 */
+.cardGap {
+  gap: 16px;
+} /* replaces gap-4 */
+.tablePadding {
+  padding: 16px;
+} /* replaces p-4 */
+.cellY {
+  padding-top: 8px;
+  padding-bottom: 8px;
+} /* replaces py-2 / py-3 */
+.view{
+    margin-left: 2rem;
+
+}

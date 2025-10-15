@@ -1,45 +1,56 @@
-import { useState } from 'react'
-import { FiCamera, FiMapPin, FiAlertCircle } from 'react-icons/fi'
+import { useState } from "react";
+import {
+  FiCamera,
+  FiMapPin,
+  FiAlertCircle,
+  FiMap,
+  FiMapPin as FiMapPinAlias,
+  FiInfo,
+} from "react-icons/fi";
 
 export default function ReportIssue() {
   const [formData, setFormData] = useState({
-    title: '',
-    category: '',
-    description: '',
-    location: '',
-    urgency: 'medium',
-    image: null
-  })
+    title: "",
+    category: "",
+    description: "",
+    location: "",
+    urgency: "medium",
+    image: null,
+  });
 
   const categories = [
-    'Potholes',
-    'Street Lights',
-    'Garbage Collection',
-    'Water Supply',
-    'Drainage',
-    'Public Property Damage',
-    'Other'
-  ]
+    "Potholes",
+    "Street Lights",
+    "Garbage Collection",
+    "Water Supply",
+    "Drainage",
+    "Public Property Damage",
+    "Other",
+  ];
 
   const handleSubmit = (e) => {
-    e.preventDefault()
-    console.log('Report submitted:', formData)
+    e.preventDefault();
+    console.log("Report submitted:", formData);
     // Add API call here
-    alert('Issue reported successfully!')
-  }
+    alert("Issue reported successfully!");
+  };
 
   const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Report an Issue</h1>
-          <p className="text-gray-600">Help improve your community by reporting civic problems</p>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+            Report an Issue
+          </h1>
+          <p className="text-gray-600">
+            Help improve your community by reporting civic problems
+          </p>
         </div>
 
         {/* Form Card */}
@@ -75,7 +86,9 @@ export default function ReportIssue() {
               >
                 <option value="">Select a category</option>
                 {categories.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
                 ))}
               </select>
             </div>
@@ -115,9 +128,10 @@ export default function ReportIssue() {
               </div>
               <button
                 type="button"
-                className="mt-2 text-sm text-green-600 hover:text-green-700 font-medium"
+                className="mt-2 text-sm text-green-600 hover:text-green-700 font-medium flex items-center gap-2"
               >
-                📍 Use my current location
+                <FiMapPinAlias size={14} />
+                Use my current location
               </button>
             </div>
 
@@ -127,8 +141,11 @@ export default function ReportIssue() {
                 Urgency Level
               </label>
               <div className="flex gap-4">
-                {['low', 'medium', 'high', 'critical'].map((level) => (
-                  <label key={level} className="flex items-center gap-2 cursor-pointer">
+                {["low", "medium", "high", "critical"].map((level) => (
+                  <label
+                    key={level}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
                     <input
                       type="radio"
                       name="urgency"
@@ -137,12 +154,17 @@ export default function ReportIssue() {
                       onChange={handleChange}
                       className="w-4 h-4 text-green-600"
                     />
-                    <span className={`capitalize text-sm font-medium ${
-                      level === 'critical' ? 'text-red-600' :
-                      level === 'high' ? 'text-orange-600' :
-                      level === 'medium' ? 'text-yellow-600' :
-                      'text-green-600'
-                    }`}>
+                    <span
+                      className={`capitalize text-sm font-medium ${
+                        level === "critical"
+                          ? "text-red-600"
+                          : level === "high"
+                          ? "text-orange-600"
+                          : level === "medium"
+                          ? "text-yellow-600"
+                          : "text-green-600"
+                      }`}
+                    >
                       {level}
                     </span>
                   </label>
@@ -157,12 +179,19 @@ export default function ReportIssue() {
               </label>
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-green-500 transition-colors">
                 <FiCamera className="mx-auto text-gray-400 text-4xl mb-3" />
-                <p className="text-sm text-gray-600 mb-2">Click to upload or drag and drop</p>
+                <p className="text-sm text-gray-600 mb-2">
+                  Click to upload or drag and drop
+                </p>
                 <p className="text-xs text-gray-500">PNG, JPG up to 10MB</p>
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={(e) => setFormData(prev => ({ ...prev, image: e.target.files[0] }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      image: e.target.files[0],
+                    }))
+                  }
                   className="hidden"
                   id="photo-upload"
                 />
@@ -197,17 +226,20 @@ export default function ReportIssue() {
         {/* Info Box */}
         <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex gap-3">
-            <span className="text-blue-600 text-xl">ℹ️</span>
+            <FiInfo className="text-blue-600" size={20} />
             <div>
-              <h3 className="font-semibold text-blue-900 mb-1">What happens next?</h3>
+              <h3 className="font-semibold text-blue-900 mb-1">
+                What happens next?
+              </h3>
               <p className="text-sm text-blue-700">
-                Your report will be reviewed by local authorities within 24-48 hours. 
-                You'll receive updates via notifications and can track the status in "My Reports".
+                Your report will be reviewed by local authorities within 24-48
+                hours. You'll receive updates via notifications and can track
+                the status in "My Reports".
               </p>
             </div>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

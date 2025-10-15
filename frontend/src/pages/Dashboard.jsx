@@ -25,11 +25,12 @@ export default function Dashboard() {
     { 
       label: 'Resolved Issues', 
       value: '2,536', 
-      icon: MdCheckCircle,
-      bgColor: 'bg-orange-50',
-      iconColor: 'text-orange-600'
+      icon: FiCheckCircle,
+      bgColor: 'bg-green-50',
+      iconColor: 'text-green-600'
     },
   ]
+              
 
   const allReports = [
     { id: 1, issue: 'Pothole on MG Road', location: 'MG Road, Sector 5', status: 'pending', time: '2 hours ago' },
