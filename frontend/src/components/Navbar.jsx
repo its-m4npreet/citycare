@@ -5,33 +5,59 @@ import {
   SignUpButton,
   useUser,
 } from "@clerk/clerk-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
-export default function Navbar() {
+export default function Navbar({ onMenuClick, mobileSidebarOpen }) {
   const { user } = useUser();
+  const location = useLocation();
+  const isLandingPage = location.pathname === '/';
 
   return (
     <nav
       className="bg-white border-b border-gray-200 sticky top-0 z-50"
       style={{
-        padding: "20px 32px",
+        padding: "12px 32px",
         borderBottom: "1px solid #e5e7eb",
       }}
     >
       <div className="flex justify-between items-center">
-        {/* Left side - CityCare Title */}
-        <div className="flex items-center">
-          <h1
-            className="text-2xl font-bold"
-            style={{ fontSize: "24px", fontWeight: "700" }}
+        {/* Left side - CityCare Logo */}
+        <Link
+          to={isLandingPage ? "/" : "/dashboard"}
+          className="flex items-center"
+          style={{ textDecoration: "none" }}
+        >
+          <img
+            src="/logo1.png"
+            alt="CityCare Logo"
+            style={{ height: "50px", width: "auto", objectFit: "cover" }}
+          />
+          <span
+            className="ml-3 text-2xl font-extrabold tracking-tight"
+            style={{
+              fontFamily: "Poppins, Inter, Arial, sans-serif",
+              color: "#0e8af8",
+              letterSpacing: "0.5px",
+              textShadow: "0 2px 8px rgba(14,138,248,0.08)",
+            }}
           >
-            <span className="text-gray-800">City</span>
-            <span className="text-green-600">Care</span>
-          </h1>
-        </div>
+            City
+            <span
+              className="text-green-600"
+              style={{
+                fontFamily: "Poppins, Inter, Arial, sans-serif",
+                fontWeight: 900,
+                marginLeft: "2px",
+                textShadow: "0 2px 8px rgba(16,185,129,0.10)",
+              }}
+            >
+              Care
+            </span>
+          </span>
+        </Link>
 
         {/* Right side - Auth Buttons / User Profile */}
-        <div className="flex items-center" style={{ gap: "12px" }}>
+        <div className="hidden md:flex items-center" style={{ gap: "12px" }}>
           {/* When User is NOT Logged In - Show Login and Register buttons */}
           <SignedOut>
             <SignInButton
@@ -81,12 +107,13 @@ export default function Navbar() {
 
           {/* When User IS Logged In - Show User Profile */}
           <SignedIn>
-            <Link
-              to="/profile"
-              aria-label="Open profile"
-              className="flex items-center"
-              style={{ gap: "12px", textDecoration: "none", cursor: "pointer" }}
-            >
+            {!isLandingPage && (
+              <Link
+                to="/profile"
+                aria-label="Open profile"
+                className="flex items-center"
+                style={{ gap: "12px", textDecoration: "none", cursor: "pointer" }}
+              >
               <img
                 src={user?.imageUrl}
                 alt={user?.firstName || "User"}
@@ -108,8 +135,54 @@ export default function Navbar() {
                 </span>
               </div>
             </Link>
+            )}
           </SignedIn>
         </div>
+
+        {/* Mobile: Hamburger Menu - Only show when signed in and not on landing page */}
+        <SignedIn>
+          {!isLandingPage && (
+            <div className="md:hidden flex items-center">
+            <button
+              aria-label="Toggle menu"
+              onClick={onMenuClick}
+              className="p-2 rounded-md hover:bg-gray-100 transition-colors"
+            >
+              {mobileSidebarOpen ? (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6 text-gray-700"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6 text-gray-700"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
+              )}
+            </button>
+          </div>
+          )}
+        </SignedIn>
       </div>
     </nav>
   );

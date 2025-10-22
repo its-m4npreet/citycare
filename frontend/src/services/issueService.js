@@ -52,6 +52,20 @@ export const issueService = {
     return response.data || response; // Extract data array from response
   },
 
+  // Get lightweight issue locations (fast map load)
+  getIssueLocations: async (filters = {}) => {
+    const queryParams = new URLSearchParams();
+    if (filters.status) queryParams.append('status', filters.status);
+    if (filters.category) queryParams.append('category', filters.category);
+    if (filters.urgency) queryParams.append('urgency', filters.urgency);
+    if (filters.limit) queryParams.append('limit', filters.limit);
+    if (filters.page) queryParams.append('page', filters.page);
+
+    const queryString = queryParams.toString();
+    const response = await apiCall(`/issues/locations${queryString ? `?${queryString}` : ''}`);
+    return response.data || response;
+  },
+
   // Get issues for a specific user
   getUserIssues: async (clerkId, status = null) => {
     const queryParams = status ? `?status=${status}` : '';

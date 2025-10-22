@@ -11,7 +11,7 @@ import {
 } from "react-icons/fi";
 import { SignOutButton, useUser } from "@clerk/clerk-react";
 
-export default function Sidebar() {
+export default function Sidebar({ mobileOpen, onClose }) {
   const location = useLocation();
 
   const { user } = useUser();
@@ -52,63 +52,105 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col h-full overflow-hidden">
-      {/* Report New Issue Button */}
-      <div
-        className="border-b border-gray-200 flex-shrink-0"
-        style={{ padding: "24px 16px 16px 16px" }}
+    <>
+      {/* Mobile backdrop overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0  bg-opacity-50 z-40 md:hidden"
+          onClick={onClose}
+          aria-label="Close sidebar"
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`
+          ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
+          md:translate-x-0
+          fixed md:relative
+          inset-y-0 left-0
+          z-50 md:z-auto
+          w-64 bg-white border-r border-gray-200
+          flex flex-col h-full overflow-hidden
+          transition-transform duration-300 ease-in-out
+        
+        `}
       >
-        <Link
-          to="/report-new-issue"
-          className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm hover:shadow-md"
-          style={{ padding: "12px 16px" }}
+        {/* Report New Issue Button */}
+        <div
+          className="border-b border-gray-200 flex-shrink-0"
+          style={{ padding: "24px 16px 16px 16px" }}
         >
-          <FiPlus size={20} />
-          <span>Report New Issue</span>
-        </Link>
-      </div>
-
-      {/* Menu Items */}
-      <nav className="flex-1 overflow-hidden" style={{ padding: "16px 12px" }}>
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = location.pathname === item.path;
-
-          return (
+          {user ? (
             <Link
-              key={item.path}
-              to={item.path}
-              className={`flex items-center gap-3 rounded-xl transition-all ${
-                isActive
-                  ? "bg-green-50 text-green-600 font-semibold shadow-sm"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              }`}
-              style={{ padding: "12px 16px", marginBottom: "4px" }}
+              to="/report-new-issue"
+              onClick={onClose}
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm hover:shadow-md"
+              style={{ padding: "12px 16px" }}
             >
-              <Icon size={20} />
-              <span className={isActive ? "font-semibold" : "font-medium"}>
-                {item.label}
-              </span>
+              <FiPlus size={20} />
+              <span>Report New Issue</span>
             </Link>
-          );
-        })}
-      </nav>
+          ) : (
+            <button
+              disabled
+              className="w-full bg-gray-200 text-gray-500 font-semibold rounded-xl flex items-center justify-center gap-2 cursor-not-allowed"
+              style={{ padding: "12px 16px" }}
+              title="Please login to report an issue"
+            >
+              <FiPlus size={20} />
+              <span>Report New Issue</span>
+            </button>
+          )}
+        </div>
 
-      {/* Sign Out at bottom */}
-      <div
-        className="border-t border-gray-200 mt-auto flex-shrink-0"
-        style={{ padding: "16px 12px" }}
-      >
-        <SignOutButton>
-          <button
-            className="w-full flex items-center gap-3 rounded-xl text-red-600 hover:bg-red-50 transition-all  "
-            style={{ padding: "12px 16px" }}
-          >
-            <FiLogOut size={20} />
-            <span className="font-medium">Sign Out</span>
-          </button>
-        </SignOutButton>
-      </div>
-    </aside>
+        {/* Menu Items */}
+        <nav
+          className="flex-1 overflow-hidden"
+          style={{ padding: "16px 12px" }}
+        >
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.path;
+
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={onClose}
+                className={`flex items-center gap-3 rounded-xl transition-all ${
+                  isActive
+                    ? "bg-green-50 text-green-600 font-semibold shadow-sm"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
+                style={{ padding: "12px 16px", marginBottom: "4px" }}
+              >
+                <Icon size={20} />
+                <span className={isActive ? "font-semibold" : "font-medium"}>
+                  {item.label}
+                </span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Sign Out at bottom */}
+        <div
+          className="border-t border-gray-200 mt-auto flex-shrink-0"
+          style={{ padding: "16px 12px" }}
+        >
+          <SignOutButton>
+            <button
+              className="w-full flex items-center gap-3 rounded-xl text-red-600 hover:bg-red-50 transition-all"
+              style={{ padding: "12px 16px" }}
+              onClick={onClose}
+            >
+              <FiLogOut size={20} />
+              <span className="font-medium">Sign Out</span>
+            </button>
+          </SignOutButton>
+        </div>
+      </aside>
+    </>
   );
 }

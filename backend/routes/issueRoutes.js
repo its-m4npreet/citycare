@@ -10,7 +10,8 @@ const {
   updateIssue,
   addIssueUpdate,
   deleteIssue,
-  getDashboardStats
+  getDashboardStats,
+  getIssueLocations
 } = require('../controllers/issueController');
 
 // Configure multer for file uploads
@@ -48,6 +49,7 @@ router.post('/', upload.fields([
 ]), createIssue);
 
 router.get('/', getAllIssues);
+router.get('/locations', getIssueLocations);
 router.get('/stats/dashboard', getDashboardStats);
 router.get('/user/:clerkId', getUserIssues);
 router.get('/:id', getIssueById);

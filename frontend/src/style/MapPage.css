@@ -1,0 +1,410 @@
+.map-page {
+  background-color: #f9fafb; /* gray-50 */
+  min-height: 100vh;
+  padding: 12px 8px;
+}
+
+@media (min-width: 640px) {
+  .map-page {
+    padding: 20px 16px;
+  }
+}
+
+@media (min-width: 768px) {
+  .map-page {
+    padding: 32px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .map-page {
+    padding: 40px;
+  }
+}
+
+.map-container {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+/* Page Title - responsive */
+.page-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .page-title {
+    font-size: 1.875rem;
+  }
+}
+
+.page-subtitle {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+@media (min-width: 768px) {
+  .page-subtitle {
+    font-size: 1rem;
+  }
+}
+
+.map-section-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+@media (min-width: 768px) {
+  .map-section-header {
+    padding: 20px 24px;
+  }
+}
+
+.map-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+@media (min-width: 768px) {
+  .map-section-title {
+    font-size: 1.125rem;
+  }
+}
+@media (min-width: 1024px) {
+  .map-section-title {
+    font-size: 1.25rem;
+  }
+}
+
+.filters-card {
+  background: #fff;
+  border: 1px solid #f3f4f6;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+@media (min-width: 768px) {
+  .filters-card {
+    padding: 20px;
+    border-radius: 16px;
+    margin-bottom: 24px;
+  }
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+@media (min-width: 640px) {
+  .filters-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+}
+@media (min-width: 768px) {
+  .filters-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+}
+
+.search-input {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 10px 14px 10px 40px;
+  outline: none;
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  .search-input {
+    padding: 12px 16px 12px 44px;
+    font-size: 16px;
+  }
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 11px;
+  color: #9ca3af;
+}
+
+@media (min-width: 768px) {
+  .search-icon {
+    left: 16px;
+    top: 14px;
+  }
+}
+
+.select-input {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 10px 14px;
+  outline: none;
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  .select-input {
+    padding: 12px 16px;
+    font-size: 16px;
+  }
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+@media (min-width: 768px) {
+  .content-grid {
+    gap: 16px;
+  }
+}
+@media (min-width: 1024px) {
+  .content-grid {
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+  }
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #f3f4f6;
+  border-radius: 12px;
+  overflow: hidden;
+}
+@media (min-width: 768px) {
+  .card {
+    border-radius: 16px;
+  }
+}
+
+.card-header {
+  padding: 16px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@media (min-width: 768px) {
+  .card-header {
+    padding: 20px 24px;
+  }
+}
+
+.card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+@media (min-width: 768px) {
+  .card-title {
+    font-size: 1.125rem;
+  }
+}
+
+.map-canvas {
+  height: 280px;
+  width: 100%;
+}
+
+@media (min-width: 480px) {
+  .map-canvas {
+    height: 320px;
+  }
+}
+@media (min-width: 640px) {
+  .map-canvas {
+    height: 400px;
+  }
+}
+@media (min-width: 768px) {
+  .map-canvas {
+    height: 500px;
+  }
+}
+@media (min-width: 1024px) {
+  .map-canvas {
+    height: 600px;
+  }
+}
+
+.legend {
+  padding: 12px 16px;
+  border-top: 1px solid #f3f4f6;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media (min-width: 640px) {
+  .legend {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+  }
+}
+
+@media (min-width: 768px) {
+  .legend {
+    padding: 16px 24px;
+    gap: 12px;
+  }
+}
+
+.legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+@media (min-width: 768px) {
+  .legend-items {
+    gap: 16px;
+  }
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+@media (min-width: 768px) {
+  .legend-item {
+    gap: 8px;
+  }
+}
+
+.legend-text {
+  font-size: 11px;
+  color: #4b5563;
+}
+@media (min-width: 768px) {
+  .legend-text {
+    font-size: 12px;
+  }
+}
+
+.legend-count {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 500;
+}
+@media (min-width: 768px) {
+  .legend-count {
+    font-size: 12px;
+  }
+}
+
+/* Issues list - responsive */
+.list-scroll {
+  max-height: 300px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 640px) {
+  .list-scroll {
+    max-height: 400px;
+  }
+}
+@media (min-width: 768px) {
+  .list-scroll {
+    max-height: 500px;
+  }
+}
+@media (min-width: 1024px) {
+  .list-scroll {
+    max-height: 600px;
+  }
+}
+
+.list-item {
+  padding: 14px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+@media (min-width: 768px) {
+  .list-item {
+    padding: 20px 24px;
+  }
+}
+
+.list-item:hover {
+  background: #f9fafb;
+}
+.list-item:active {
+  background: #f3f4f6;
+}
+
+.list-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1f2937;
+  line-height: 1.3;
+}
+@media (min-width: 768px) {
+  .list-title {
+    font-size: 0.95rem;
+  }
+}
+
+.list-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #6b7280;
+  font-size: 11px;
+  margin: 6px 0;
+}
+
+@media (min-width: 768px) {
+  .list-meta {
+    gap: 6px;
+    font-size: 12px;
+    margin: 8px 0;
+  }
+}
+
+.list-coords {
+  font-size: 10px;
+  color: #9ca3af;
+}
+@media (min-width: 768px) {
+  .list-coords {
+    font-size: 12px;
+  }
+}
+
+/* Status badges - responsive */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+@media (min-width: 768px) {
+  .status-badge {
+    padding: 4px 12px;
+    gap: 4px;
+    font-size: 11px;
+  }
+}

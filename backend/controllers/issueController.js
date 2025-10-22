@@ -180,6 +180,72 @@ exports.getAllIssues = async (req, res) => {
   }
 };
 
+// @desc    Get lightweight issue locations (coords + minimal fields)
+// @route   GET /api/issues/locations
+// @access  Public
+exports.getIssueLocations = async (req, res) => {
+  try {
+    const { status, category, urgency, limit = 1000, page = 1 } = req.query;
+    const limitInt = Number.parseInt(limit, 10) || 1000;
+    const pageInt = Number.parseInt(page, 10) || 1;
+
+    const filter = {};
+    if (status) filter.status = status;
+    if (category) filter.category = category;
+    if (urgency) filter.urgency = urgency;
+
+    const skip = (pageInt - 1) * limitInt;
+
+    // Select only necessary fields for safety
+    const issues = await Issue.find(filter)
+      .select('_id title category status urgency location')
+      .sort({ createdAt: -1 })
+      .limit(limitInt)
+      .skip(skip)
+      .lean();
+
+    // Normalize legacy coordinate fields (lat/lng) to latitude/longitude
+    const normalized = (issues || []).map((it) => {
+      const location = it && it.location ? it.location : {};
+      const coordinates = location && location.coordinates ? location.coordinates : {};
+      const rawLat = (typeof coordinates.latitude === 'number' || typeof coordinates.latitude === 'string')
+        ? coordinates.latitude
+        : coordinates.lat;
+      const rawLng = (typeof coordinates.longitude === 'number' || typeof coordinates.longitude === 'string')
+        ? coordinates.longitude
+        : coordinates.lng;
+      const latitude = typeof rawLat === 'string' ? Number(rawLat) : rawLat;
+      const longitude = typeof rawLng === 'string' ? Number(rawLng) : rawLng;
+      return {
+        _id: it._id,
+        title: it.title,
+        category: it.category,
+        status: it.status,
+        urgency: it.urgency,
+        location: {
+          address: location && location.address ? location.address : '',
+          coordinates: { latitude, longitude },
+        },
+      };
+    });
+
+    // Filter out those without valid numeric coordinates
+    const withCoords = normalized.filter((it) =>
+      Number.isFinite(it?.location?.coordinates?.latitude) &&
+      Number.isFinite(it?.location?.coordinates?.longitude)
+    );
+
+    res.status(200).json({ success: true, data: withCoords, count: withCoords.length });
+  } catch (error) {
+    console.error('Error in getIssueLocations:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching issue locations',
+      error: error.message,
+    });
+  }
+};
+
 // @desc    Get user's issues
 // @route   GET /api/issues/user/:clerkId
 // @access  Public

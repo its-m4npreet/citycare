@@ -22,11 +22,22 @@ export default function MyReports() {
   const { user } = useUser();
   const [filter, setFilter] = useState("all");
   const [sortBy, setSortBy] = useState("recent");
-  const [selectedReport, setSelectedReport] = useState(null);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  // const [selectedReport, setSelectedReport] = useState(null);
+  // const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showAll, setShowAll] = useState(false);
+
+  const normalizeStatus = (value) => {
+    const raw = (value || '').toString().trim().toLowerCase();
+    if (!raw) return 'pending';
+    // Common variants mapping
+    if (raw === 'in progress' || raw === 'in_progress' || raw === 'progress') return 'in-progress';
+    if (raw === 'resolved' || raw === 'closed' || raw === 'done') return 'resolved';
+    if (raw === 'pending' || raw === 'open' || raw === 'new') return 'pending';
+    return raw.replace(/\s+/g, '-');
+  };
 
   // Fetch user's reports from backend
   useEffect(() => {
@@ -47,7 +58,7 @@ export default function MyReports() {
           title: issue.title,
           category: issue.category,
           location: issue.location?.address || issue.location || 'Unknown Location',
-          status: issue.status,
+          status: normalizeStatus(issue.status),
           date: new Date(issue.createdAt).toISOString().slice(0, 10),
           urgency: issue.urgency,
           description: issue.description,
@@ -64,7 +75,22 @@ export default function MyReports() {
         // Fallback to localStorage if backend fails
         try {
           const localReports = JSON.parse(localStorage.getItem("citycare_reports") || "[]");
-          setReports(localReports);
+          const transformedLocal = Array.isArray(localReports)
+            ? localReports.map((r) => ({
+                id: r.id || r._id,
+                title: r.title,
+                category: r.category,
+                location: r.location?.address || r.location || 'Unknown Location',
+                status: normalizeStatus(r.status),
+                date: r.date || (r.createdAt ? new Date(r.createdAt).toISOString().slice(0, 10) : ''),
+                urgency: r.urgency,
+                description: r.description,
+                images: r.media?.images || r.images || [],
+                videos: r.media?.videos || r.videos || [],
+                updates: r.updates || [],
+              }))
+            : [];
+          setReports(transformedLocal);
         } catch {
           setReports([]);
         }
@@ -76,11 +102,8 @@ export default function MyReports() {
     fetchReports();
   }, [user]);
 
-  const filteredReports =
-    filter === "all" ? reports : reports.filter((r) => r.status === filter);
-
-  // Sort the filtered reports
-  const sortedReports = [...filteredReports].sort((a, b) => {
+  // Strict filtering: only matching reports are shown when a filter is selected
+  const sortByComparator = (a, b) => {
     switch (sortBy) {
       case "recent":
         return new Date(b.date) - new Date(a.date);
@@ -93,13 +116,17 @@ export default function MyReports() {
       default:
         return 0;
     }
-  });
+  };
+
+  const filteredReports =
+    filter === "all" ? reports : reports.filter((r) => normalizeStatus(r.status) === filter);
+  const sortedReports = [...filteredReports].sort(sortByComparator);
 
   const statusCounts = {
     all: reports.length,
-    pending: reports.filter((r) => r.status === "pending").length,
-    "in-progress": reports.filter((r) => r.status === "in-progress").length,
-    resolved: reports.filter((r) => r.status === "resolved").length,
+    pending: reports.filter((r) => normalizeStatus(r.status) === "pending").length,
+    "in-progress": reports.filter((r) => normalizeStatus(r.status) === "in-progress").length,
+    resolved: reports.filter((r) => normalizeStatus(r.status) === "resolved").length,
   };
 
   const getStatusColor = (status) => {
@@ -247,24 +274,31 @@ export default function MyReports() {
             className="border-b border-gray-100"
             style={{ padding: "24px 32px" }}
           >
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center gap-4">
               <h2 className="text-xl font-bold text-gray-800">
                 {filter === "all"
                   ? "All Reports"
-                  : `${
-                      filter.charAt(0).toUpperCase() + filter.slice(1)
-                    } Reports`}
+                  : `${filter.charAt(0).toUpperCase() + filter.slice(1)} Reports`}
               </h2>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 font-medium text-gray-700"
-                style={{ padding: "10px 16px" }}
-              >
-                <option value="recent">Sort by: Most Recent</option>
-                <option value="oldest">Sort by: Oldest</option>
-                <option value="urgency">Sort by: Urgency</option>
-              </select>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowAll((v) => !v)}
+                  className="text-sm text-green-600 hover:text-green-700 font-semibold hover:bg-green-50 rounded-lg transition-colors"
+                  style={{ padding: "8px 12px" }}
+                >
+                  {showAll ? "Show Less" : "View All →"}
+                </button>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 font-medium text-gray-700"
+                  style={{ padding: "10px 16px" }}
+                >
+                  <option value="recent">Sort by: Most Recent</option>
+                  <option value="oldest">Sort by: Oldest</option>
+                  <option value="urgency">Sort by: Urgency</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -328,7 +362,7 @@ export default function MyReports() {
                 </p>
               </div>
             ) : (
-              sortedReports.map((report) => (
+              (showAll ? sortedReports : sortedReports.slice(0, 4)).map((report) => (
                 <div
                   key={report.id}
                   className="hover:bg-gray-50 transition-colors"
@@ -343,13 +377,14 @@ export default function MyReports() {
                       >
                         <div>
                           <h3
-                            className="text-lg font-semibold text-gray-800"
-                            style={{ marginBottom: "4px" }}
+                            className="text-lg font-semibold text-gray-800 truncate"
+                            style={{ marginBottom: "4px", maxWidth: "520px" }}
+                            title={report.title}
                           >
                             {report.title}
                           </h3>
-                          <p className="text-xs text-gray-500 font-mono" style={{ marginBottom: "8px" }}>
-                            Issue ID: {report.id}
+                          <p className="text-xs text-gray-700 font-mono" style={{ marginBottom: "8px", wordBreak: "break-all" }} title={report.id}>
+                            <span className="bg-gray-100 border border-gray-200 rounded px-2 py-1">{report.id}</span>
                           </p>
                           <div
                             className="flex items-center text-sm text-gray-600"
@@ -360,7 +395,9 @@ export default function MyReports() {
                               style={{ gap: "6px" }}
                             >
                               <FiMapPin size={14} />
-                              {report.location}
+                              <span className="truncate" style={{ maxWidth: 280 }} title={report.location}>
+                                {report.location}
+                              </span>
                             </span>
                             <span
                               className="flex items-center"
@@ -391,8 +428,9 @@ export default function MyReports() {
                       </div>
 
                       <p
-                        className="text-gray-700"
-                        style={{ marginBottom: "12px" }}
+                        className="text-gray-700 truncate"
+                        style={{ marginBottom: "12px", maxWidth: "680px" }}
+                        title={report.description}
                       >
                         {report.description}
                       </p>
@@ -421,28 +459,13 @@ export default function MyReports() {
                     <div className="flex flex-col" style={{ gap: "8px" }}>
                       <button
                         onClick={() => {
-                          setSelectedReport(report);
-                          setShowDetailsModal(true);
+                          navigate(`/my-reports/${report.id}`, { state: { report } });
                         }}
                         className="text-sm font-semibold text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                         style={{ padding: "10px 20px" }}
                       >
                         View Details
                       </button>
-                      {report.status !== "resolved" && (
-                        <button
-                          onClick={() => {
-                            // Navigate to report update page with report data
-                            navigate("/report-new-issue", {
-                              state: { updateReport: report },
-                            });
-                          }}
-                          className="text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                          style={{ padding: "10px 20px" }}
-                        >
-                          Update
-                        </button>
-                      )}
                     </div>
                   </div>
 
@@ -465,143 +488,7 @@ export default function MyReports() {
         </div>
       </div>
 
-      {/* View Details Modal */}
-      {showDetailsModal && selectedReport && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-          onClick={() => setShowDetailsModal(false)}
-          style={{ padding: "20px" }}
-        >
-          <div
-            className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-            style={{ padding: "32px" }}
-          >
-            <div
-              className="flex justify-between items-start"
-              style={{ marginBottom: "24px" }}
-            >
-              <div>
-                <h2
-                  className="text-2xl font-bold text-gray-800"
-                  style={{ marginBottom: "4px" }}
-                >
-                  {selectedReport.title}
-                </h2>
-                <p className="text-xs text-gray-500 font-mono" style={{ marginBottom: "8px" }}>
-                  Issue ID: {selectedReport.id}
-                </p>
-                <span
-                  className={`inline-block rounded-full text-xs font-semibold border ${getStatusColor(
-                    selectedReport.status
-                  )}`}
-                  style={{ padding: "6px 16px" }}
-                >
-                  {selectedReport.status === "in-progress"
-                    ? "In Progress"
-                    : selectedReport.status}
-                </span>
-              </div>
-              <button
-                onClick={() => setShowDetailsModal(false)}
-                className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
-              >
-                <FiX />
-              </button>
-            </div>
-
-            <div style={{ marginBottom: "24px" }}>
-              <h3
-                className="text-sm font-semibold text-gray-700"
-                style={{ marginBottom: "8px" }}
-              >
-                Description
-              </h3>
-              <p className="text-gray-700">{selectedReport.description}</p>
-            </div>
-
-            <div
-              className="grid grid-cols-2 gap-4"
-              style={{ marginBottom: "24px" }}
-            >
-              <div>
-                <h3
-                  className="text-sm font-semibold text-gray-700"
-                  style={{ marginBottom: "8px" }}
-                >
-                  Category
-                </h3>
-                <p className="text-gray-700">{selectedReport.category}</p>
-              </div>
-              <div>
-                <h3
-                  className="text-sm font-semibold text-gray-700"
-                  style={{ marginBottom: "8px" }}
-                >
-                  Urgency
-                </h3>
-                <p
-                  className={`font-semibold ${getUrgencyColor(
-                    selectedReport.urgency
-                  )}`}
-                >
-                  {selectedReport.urgency.toUpperCase()}
-                </p>
-              </div>
-            </div>
-
-            <div style={{ marginBottom: "24px" }}>
-              <h3
-                className="text-sm font-semibold text-gray-700"
-                style={{ marginBottom: "8px" }}
-              >
-                Location
-              </h3>
-              <div
-                className="flex items-center text-gray-700"
-                style={{ gap: "8px" }}
-              >
-                <FiMapPin size={16} />
-                {selectedReport.location}
-              </div>
-            </div>
-
-            <div style={{ marginBottom: "24px" }}>
-              <h3
-                className="text-sm font-semibold text-gray-700"
-                style={{ marginBottom: "8px" }}
-              >
-                Reported Date
-              </h3>
-              <div
-                className="flex items-center text-gray-700"
-                style={{ gap: "8px" }}
-              >
-                <FiCalendar size={16} />
-                {new Date(selectedReport.date).toLocaleDateString("en-US", {
-                  weekday: "long",
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </div>
-            </div>
-
-            <div
-              className="border-t border-gray-200"
-              style={{ paddingTop: "24px" }}
-            >
-              <button
-                onClick={() => setShowDetailsModal(false)}
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors"
-                style={{ padding: "12px 24px" }}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* View Details Modal removed in favor of dedicated page */}
     </div>
   );
 }

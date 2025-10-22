@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   FiCamera,
@@ -32,6 +32,86 @@ export default function ReportNewIssue() {
     videos: [],
   });
   const [loadingLocation, setLoadingLocation] = useState(false);
+  const mapRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const markerRef = useRef(null);
+
+  const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
+  const loadGoogleMaps = () => {
+    return new Promise((resolve, reject) => {
+      if (window.google && window.google.maps) {
+        resolve(window.google.maps);
+        return;
+      }
+      const existing = document.querySelector('script[data-google-maps]');
+      if (existing) {
+        existing.addEventListener('load', () => resolve(window.google.maps));
+        existing.addEventListener('error', reject);
+        return;
+      }
+      if (!GOOGLE_MAPS_API_KEY) {
+        reject(new Error('Missing Google Maps API key'));
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      script.setAttribute('data-google-maps', 'true');
+      script.onload = () => resolve(window.google.maps);
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  };
+
+  useEffect(() => {
+    let isCancelled = false;
+    loadGoogleMaps()
+      .then((maps) => {
+        if (isCancelled || !mapRef.current) return;
+        const defaultCenter = { lat: 28.6139, lng: 77.2090 };
+        const startCenter = formData.coordinates
+          ? { lat: Number(formData.coordinates.lat), lng: Number(formData.coordinates.lng) }
+          : defaultCenter;
+        if (!mapInstanceRef.current) {
+          mapInstanceRef.current = new maps.Map(mapRef.current, {
+            center: startCenter,
+            zoom: formData.coordinates ? 16 : 12,
+            mapTypeControl: false,
+            streetViewControl: false,
+            fullscreenControl: false,
+          });
+        }
+        // place existing marker
+        if (formData.coordinates && Number.isFinite(Number(formData.coordinates.lat)) && Number.isFinite(Number(formData.coordinates.lng))) {
+          markerRef.current = new maps.Marker({
+            position: startCenter,
+            map: mapInstanceRef.current,
+          });
+        }
+        // click to select
+        mapInstanceRef.current.addListener('click', async (e) => {
+          const lat = e.latLng.lat();
+          const lng = e.latLng.lng();
+          if (markerRef.current) markerRef.current.setMap(null);
+          markerRef.current = new maps.Marker({ position: { lat, lng }, map: mapInstanceRef.current });
+          // try reverse geocode
+          try {
+            const geocoder = new maps.Geocoder();
+            geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+              const address = status === 'OK' && results && results[0] ? results[0].formatted_address : `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+              setFormData((prev) => ({ ...prev, coordinates: { lat, lng }, location: address }));
+            });
+          } catch (err) {
+            setFormData((prev) => ({ ...prev, coordinates: { lat, lng }, location: `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}` }));
+            console.error('Geocode error:', err);
+          }
+        });
+      })
+      .catch(() => {});
+    return () => { isCancelled = true; };
+  }, [GOOGLE_MAPS_API_KEY]);
 
   // Pre-fill form if updating an existing report, otherwise reset to empty
   useEffect(() => {
@@ -420,22 +500,32 @@ export default function ReportNewIssue() {
                   {formData.coordinates.lng.toFixed(6)}
                 </p>
               )}
+              {/* Inline Map Picker */}
+              <div style={{ marginTop: "12px" }}>
+                <div
+                  ref={mapRef}
+                  style={{ width: "100%", height: "300px", borderRadius: "8px" }}
+                  className="border border-gray-200"
+                />
+                <p className="text-xs text-gray-500" style={{ marginTop: "6px" }}>
+                  Click on the map to set the exact location.
+                </p>
+              </div>
             </div>
 
             {/* Urgency Level */}
-            <div style={{ marginBottom: "24px" }}>
+            <div className="mb-4 sm:mb-6">
               <label
-                className="block text-sm font-semibold text-gray-700"
-                style={{ marginBottom: "8px" }}
+                className="block text-sm font-semibold text-gray-700 mb-2"
               >
                 Urgency Level
               </label>
-              <div className="flex" style={{ gap: "16px" }}>
+              <div className="flex flex-wrap gap-3 sm:gap-4" 
+              style={{margin:"10px"}}>
                 {["low", "medium", "high", "critical"].map((level) => (
                   <label
                     key={level}
-                    className="flex items-center cursor-pointer"
-                    style={{ gap: "8px" }}
+                    className="flex items-center cursor-pointer gap-2"
                   >
                     <input
                       type="radio"
@@ -446,7 +536,7 @@ export default function ReportNewIssue() {
                       className="w-4 h-4 text-green-600 focus:ring-green-500"
                     />
                     <span
-                      className={`capitalize text-sm font-medium ${
+                      className={`capitalize text-xs sm:text-sm font-medium ${
                         level === "critical"
                           ? "text-red-600"
                           : level === "high"

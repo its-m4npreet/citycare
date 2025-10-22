@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useState } from "react";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import {
   SignedIn,
   SignedOut,
@@ -7,10 +8,12 @@ import {
 } from "@clerk/clerk-react";
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
+import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminReportDetail from "./pages/AdminReportDetail";
 import ReportNewIssue from "./pages/ReportNewIssue";
+import MyReportDetail from "./pages/MyReportDetail";
 import MyReports from "./pages/MyReports";
 import Map from "./pages/Map";
 import Profile from "./pages/Profile";
@@ -78,81 +81,182 @@ function AdminRoleChecker({ children }) {
   );
 }
 
+// Component to handle landing page with authentication check
+function LandingPageWithAuth() {
+  return (
+    <>
+      <SignedIn>
+        <Navigate to="/dashboard" replace />
+      </SignedIn>
+      <SignedOut>
+        <LandingPage />
+      </SignedOut>
+    </>
+  );
+}
+
+function AppContent() {
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const location = useLocation();
+  const isLandingPage = location.pathname === '/';
+
+  if (isLandingPage) {
+    return (
+      <div style={{ minHeight: '100vh', overflow: 'auto' }}>
+        <Routes>
+          <Route path="/" element={<LandingPageWithAuth />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route
+            path="/map"
+            element={
+              <ProtectedRoute>
+                <Map />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/report/:id"
+            element={
+              <AdminRoute>
+                <AdminReportDetail />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/report-new-issue"
+            element={
+              <ProtectedRoute>
+                <ReportNewIssue />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-reports"
+            element={
+              <ProtectedRoute>
+                <MyReports />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-reports/:id"
+            element={
+              <ProtectedRoute>
+                <MyReportDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-screen bg-gray-50 flex flex-col" style={{ overflow: 'auto' }}>
+      {/* Navbar - Full Width */}
+      <Navbar
+        onMenuClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+        mobileSidebarOpen={mobileSidebarOpen}
+      />
+
+      {/* Sidebar and Main Content */}
+      <div className="flex flex-1" style={{ overflow: 'auto' }}>
+        <SignedIn>
+          <Sidebar
+            mobileOpen={mobileSidebarOpen}
+            onClose={() => setMobileSidebarOpen(false)}
+          />
+        </SignedIn>
+
+        <main className="flex-1" style={{ overflow: 'auto' }}>
+          <Routes>
+            <Route path="/" element={<LandingPageWithAuth />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route
+              path="/map"
+              element={
+                <ProtectedRoute>
+                  <Map />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <AdminRoute>
+                  <AdminDashboard />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/report/:id"
+              element={
+                <AdminRoute>
+                  <AdminReportDetail />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/report-new-issue"
+              element={
+                <ProtectedRoute>
+                  <ReportNewIssue />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/my-reports"
+              element={
+                <ProtectedRoute>
+                  <MyReports />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/my-reports/:id"
+              element={
+                <ProtectedRoute>
+                  <MyReportDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </main>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
-        {/* Navbar - Full Width */}
-        <Navbar />
-
-        {/* Sidebar and Main Content */}
-        <div className="flex flex-1 overflow-hidden">
-          <SignedIn>
-            <Sidebar />
-          </SignedIn>
-
-          <main className="flex-1 overflow-y-auto">
-            <Routes>
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/map"
-                element={
-                  <ProtectedRoute>
-                    <Map />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin"
-                element={
-                  <AdminRoute>
-                    <AdminDashboard />
-                  </AdminRoute>
-                }
-              />
-              <Route
-                path="/admin/report/:id"
-                element={
-                  <AdminRoute>
-                    <AdminReportDetail />
-                  </AdminRoute>
-                }
-              />
-              <Route
-                path="/report-new-issue"
-                element={
-                  <ProtectedRoute>
-                    <ReportNewIssue />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/my-reports"
-                element={
-                  <ProtectedRoute>
-                    <MyReports />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedRoute>
-                    <Profile />
-                  </ProtectedRoute>
-                }
-              />
-            </Routes>
-          </main>
-        </div>
-      </div>
+      <AppContent />
     </BrowserRouter>
   );
 }

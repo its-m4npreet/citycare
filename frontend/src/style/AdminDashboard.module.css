@@ -1,43 +1,149 @@
 .container {
-  padding: 32px; /* replaces p-8 */
+  padding: 16px; /* Mobile: smaller padding */
   min-height: 100vh;
   background-color: #f9fafb; /* gray-50 */
 }
+
+/* Tablet and up */
+@media (min-width: 768px) {
+  .container {
+    padding: 24px;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .container {
+    padding: 32px;
+  }
+}
+
 .inner {
   max-width: 1120px; /* approx max-w-7xl */
   margin: 0 auto;
 }
+
 .header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 24px; /* replaces mb-6 */
-}
-.statGrid {
-  display: grid;
-  grid-template-columns: repeat(1, 1fr);
+  flex-direction: column; /* Stack on mobile */
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
+
+/* Tablet and up: horizontal layout */
 @media (min-width: 768px) {
-  .statGrid {
-    grid-template-columns: repeat(4, 1fr);
+  .header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
   }
 }
+
+.filterContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+@media (max-width: 767px) {
+  .filterContainer {
+    gap: 8px;
+  }
+}
+
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr); /* Mobile: 1 column */
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+/* Tablet: 2 columns */
+@media (min-width: 640px) {
+  .statGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+}
+
+/* Desktop: 4 columns */
+@media (min-width: 1024px) {
+  .statGrid {
+    grid-template-columns: repeat(4, 1fr);
+    margin-bottom: 24px;
+  }
+}
+
 .cardPadding {
-  padding: 24px;
-} /* replaces p-6 */
+  padding: 16px; /* Mobile: smaller padding */
+}
+
+@media (min-width: 768px) {
+  .cardPadding {
+    padding: 20px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .cardPadding {
+    padding: 24px;
+  }
+}
+
 .cardGap {
-  gap: 16px;
-} /* replaces gap-4 */
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .cardGap {
+    gap: 16px;
+  }
+}
+
 .tablePadding {
-  padding: 16px;
-} /* replaces p-4 */
+  padding: 12px;
+}
+
+@media (min-width: 768px) {
+  .tablePadding {
+    padding: 16px;
+  }
+}
+
 .cellY {
   padding-top: 8px;
   padding-bottom: 8px;
-} /* replaces py-2 / py-3 */
-.view{
-    margin-left: 2rem;
+}
 
+@media (min-width: 768px) {
+  .cellY {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+}
+
+/* Responsive table wrapper */
+.tableWrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile table styles */
+@media (max-width: 767px) {
+  .tableWrapper table {
+    min-width: 600px; /* Allow horizontal scroll on mobile */
+  }
+}
+
+.view {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* Hide certain columns on small screens */
+@media (max-width: 640px) {
+  .hideOnMobile {
+    display: none;
+  }
 }
