@@ -6,8 +6,11 @@ const connectDB = require("./config/database");
 // Load environment variables
 dotenv.config();
 
-// Connect to MongoDB
-connectDB();
+// Connect to MongoDB (safe for serverless)
+connectDB().catch((err) => {
+  // Log the error; do not exit the process in serverless environments
+  console.error('Database connection failed during initialization:', err.message || err);
+});
 
 // Initialize Express app
 const app = express();
