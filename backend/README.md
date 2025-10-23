@@ -1,39 +1,3 @@
-# CityCare Backend — Vercel Deployment
-
-This backend uses Express and MongoDB and is prepared to run as a serverless function on Vercel.
-
-Quick checklist before deploying:
-
-- Set the project root for Vercel to the `backend` folder.
-- Add the required Environment Variables in Vercel project settings:
-  - MONGODB_URI — MongoDB connection string (Atlas recommended)
-  - JWT_SECRET — secret for signing JWTs
-  - FRONTEND_URL — URL of your frontend (optional)
-  - NODE_ENV — set to `production`
-
-How this works
-- The Express app is exported from `server.js` and wrapped with `serverless-http` in `api/index.js`.
-- Vercel will use the `api/index.js` file as the serverless function entrypoint.
-
-Local testing
-
-1. Install dependencies:
-
-   npm install
-
-2. Start in development (same as before):
-
-   npm run dev
-
-3. Quick smoke test for the serverless handler (after npm install):
-
-   node -e "console.log(typeof require('./api'))"
-
-If it prints `function`, the handler was loaded successfully.
-
-Notes and caveats
-- Ensure your MongoDB Atlas cluster allows connections from Vercel's IP ranges or use a network access setting that permits connections (or use VPC peering / private networking as appropriate).
-- Large file uploads may not be suitable for serverless functions — consider using direct-to-S3/Cloud Storage uploads if you expect big files.
 # CityCare Backend API
 
 Complete backend API for CityCare civic issue reporting system.

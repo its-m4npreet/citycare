@@ -6,11 +6,8 @@ const connectDB = require("./config/database");
 // Load environment variables
 dotenv.config();
 
-// Connect to MongoDB (safe for serverless)
-connectDB().catch((err) => {
-  // Log the error; do not exit the process in serverless environments
-  console.error('Database connection failed during initialization:', err.message || err);
-});
+// Connect to MongoDB
+connectDB();
 
 // Initialize Express app
 const app = express();
@@ -67,13 +64,8 @@ app.use((req, res) => {
 
 // Start server
 const PORT = process.env.PORT || 5000;
-if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
-    console.log(`📍 API URL: http://localhost:${PORT}`);
-  });
-}
-
-// Export app for serverless adapters (Vercel, Netlify, AWS Lambda, etc.)
-module.exports = app;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
+  console.log(`📍 API URL: http://localhost:${PORT}`);
+});
