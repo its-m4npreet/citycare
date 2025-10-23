@@ -284,7 +284,7 @@ Create a `.env` file in the frontend directory:
 ```env
 # Frontend Environment Variables
 VITE_CLERK_PUBLISHABLE_KEY=pk_test_your_clerk_publishable_key_here
-VITE_API_URL=http://localhost:5000/api
+VITE_API_URL=https://citycare-8l8p.onrender.com//api
 VITE_ADMIN_EMAILS=admin@citycare.com,manager@citycare.com
 ```
 
@@ -332,7 +332,7 @@ The application supports file uploads for images and videos:
    cd backend
    npm run dev
    ```
-   Server runs on `http://localhost:5000`
+   Server runs on `https://citycare-8l8p.onrender.com/`
 
 2. **Start Frontend Development Server**:
    ```bash
@@ -361,7 +361,7 @@ The application supports file uploads for images and videos:
 
 ### Base URL
 ```
-http://localhost:5000/api
+https://citycare-8l8p.onrender.com//api
 ```
 
 ### Authentication Endpoints

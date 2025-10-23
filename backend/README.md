@@ -76,7 +76,7 @@ npm run dev
 npm start
 ```
 
-The server will run on `http://localhost:5000`
+The server will run on `https://citycare-8l8p.onrender.com/`
 
 ## 📡 API Endpoints
 
@@ -256,7 +256,7 @@ Response:
 Update your frontend `.env` file:
 
 ```env
-VITE_API_URL=http://localhost:5000/api
+VITE_API_URL=https://citycare-8l8p.onrender.com//api
 ```
 
 Example fetch in React:
@@ -274,7 +274,7 @@ const createIssue = async (formData) => {
     data.append('images', formData.image);
   }
   
-  const response = await fetch('http://localhost:5000/api/issues', {
+  const response = await fetch('https://citycare-8l8p.onrender.com//api/issues', {
     method: 'POST',
     body: data
   });
@@ -284,7 +284,7 @@ const createIssue = async (formData) => {
 
 // Get user issues
 const getUserIssues = async (clerkId) => {
-  const response = await fetch(`http://localhost:5000/api/issues/user/${clerkId}`);
+  const response = await fetch(`https://citycare-8l8p.onrender.com//api/issues/user/${clerkId}`);
   return await response.json();
 };
 ```
@@ -299,7 +299,7 @@ Test the API using tools like:
 
 Example cURL command:
 ```bash
-curl -X POST http://localhost:5000/api/users/profile \
+curl -X POST https://citycare-8l8p.onrender.com//api/users/profile \
   -H "Content-Type: application/json" \
   -d '{"clerkId":"user_123","email":"test@example.com","firstName":"Test"}'
 ```
