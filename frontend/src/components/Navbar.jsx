@@ -6,6 +6,8 @@ import {
   useUser,
 } from "@clerk/clerk-react";
 import { Link, useLocation } from "react-router-dom";
+import { IoMdNotificationsOutline } from "react-icons/io";
+
 
 export default function Navbar({ onMenuClick, mobileSidebarOpen }) {
   const { user } = useUser();
@@ -105,36 +107,54 @@ export default function Navbar({ onMenuClick, mobileSidebarOpen }) {
             </SignUpButton>
           </SignedOut>
 
-          {/* When User IS Logged In - Show User Profile */}
+          {/* When User IS Logged In - Show Notifications + User Profile */}
           <SignedIn>
             {!isLandingPage && (
-              <Link
-                to="/profile"
-                aria-label="Open profile"
-                className="flex items-center"
-                style={{ gap: "12px", textDecoration: "none", cursor: "pointer" }}
-              >
-              <img
-                src={user?.imageUrl}
-                alt={user?.firstName || "User"}
-                className="rounded-full border-2 border-green-500"
-                style={{ width: "40px", height: "40px", objectFit: "cover" }}
-              />
-              <div className="flex flex-col">
-                <span
-                  className="text-sm font-semibold text-gray-800"
-                  style={{ fontSize: "14px", fontWeight: "600" }}
+              <>
+                {/* Notification button */}
+                <button
+                  aria-label="Notifications"
+                  className="relative rounded-md hover:bg-green-100 border border-gray-400 hover:border-green-600  cursor-pointer"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3px' }}
                 >
-                  {user?.firstName} {user?.lastName}
-                </span>
-                <span
-                  className="text-xs text-green-600"
-                  style={{ fontSize: "12px" }}
+                 <IoMdNotificationsOutline className="h-6 w-6 text-gray-700" />
+
+                  {/* unread badge (static for now) */}
+                  <span
+                    className="absolute top-0 right-0 inline-flex items-center justify-center w-2 h-2 text-xs font-semibold text-white bg-red-600 rounded-full"
+                    style={{ transform: 'translate(50%,-30%)' }}
+                  >
+                  </span>
+                </button>
+
+                <Link
+                  to="/profile"
+                  aria-label="Open profile"
+                  className="flex items-center"
+                  style={{ gap: "12px", textDecoration: "none", cursor: "pointer" }}
                 >
-                  Active
-                </span>
-              </div>
-            </Link>
+                  <img
+                    src={user?.imageUrl}
+                    alt={user?.firstName || "User"}
+                    className="rounded-full border-2 border-green-500"
+                    style={{ width: "40px", height: "40px", objectFit: "cover" }}
+                  />
+                  <div className="flex flex-col">
+                    <span
+                      className="text-sm font-semibold text-gray-800"
+                      style={{ fontSize: "14px", fontWeight: "600" }}
+                    >
+                      {user?.firstName} {user?.lastName}
+                    </span>
+                    <span
+                      className="text-xs text-green-600"
+                      style={{ fontSize: "12px" }}
+                    >
+                      Active
+                    </span>
+                  </div>
+                </Link>
+              </>
             )}
           </SignedIn>
         </div>
