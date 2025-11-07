@@ -75,20 +75,32 @@ CityCare is a modern, full-stack civic issue reporting platform that empowers ci
 - **My Reports**: Personal dashboard for submitted issues
 - **Profile Management**: Update personal information
 - **Interactive Maps**: Location-based issue visualization
+- **Real-Time Notifications**: Get instant updates when admins update your issues
+- **Notification Center**: Beautiful dropdown with notification history
+- **Smart Filtering**: Filter reports by status, category, and urgency
 
 ### 🛠️ Admin Features
 ![Admin Features](docs/images/admin-features.png)
 - **Dashboard Overview**: Comprehensive statistics and analytics
 - **Issue Management**: Review, update, and resolve reports
 - **User Management**: Monitor citizen engagement
-- **Status Updates**: Communicate progress to reporters
+- **Status Updates**: Communicate progress to reporters with automatic notifications
 - **Bulk Operations**: Efficient batch processing
+- **Advanced Search**: Find issues quickly with powerful filters
 
 ### 🔐 Security & Authentication
 - **Clerk Integration**: Secure user authentication
 - **Role-Based Access**: Different permissions for users and admins
 - **Protected Routes**: Automatic redirects based on authentication
 - **Data Encryption**: Secure file uploads and storage
+
+### 🔔 Notification System
+- **Real-Time Updates**: Get notified when admins update your issues
+- **Beautiful UI**: Smooth animations and modern design
+- **Notification Types**: Different icons for resolved, rejected, in-progress, and comment updates
+- **Mark as Read**: Track which notifications you've seen
+- **Auto-Refresh**: Checks for new notifications every 30 seconds
+- **Quick Navigation**: Click notifications to jump to issue details
 
 ## 🛠️ Tech Stack
 
@@ -136,13 +148,16 @@ CityCare/
 │   ├── src/
 │   │   ├── components/        # Reusable UI components
 │   │   │   ├── Navbar.jsx    # Navigation component
-│   │   │   └── Sidebar.jsx   # Sidebar navigation
+│   │   │   ├── Sidebar.jsx   # Sidebar navigation
+│   │   │   └── NotificationDropdown.jsx  # Notification system
 │   │   ├── pages/            # Page components
 │   │   │   ├── LandingPage.jsx      # Landing page
 │   │   │   ├── Dashboard.jsx        # User dashboard
 │   │   │   ├── AdminDashboard.jsx   # Admin dashboard
+│   │   │   ├── AdminReportDetail.jsx # Admin issue detail view
 │   │   │   ├── ReportNewIssue.jsx  # Issue reporting
 │   │   │   ├── MyReports.jsx        # User's reports
+│   │   │   ├── MyReportDetail.jsx  # User issue detail view
 │   │   │   ├── Map.jsx             # Interactive map
 │   │   │   └── Profile.jsx         # User profile
 │   │   ├── services/         # API service layer
@@ -170,13 +185,14 @@ CityCare/
 │   │   ├── errorHandler.js      # Error handling
 │   │   └── validateRequest.js   # Request validation
 │   ├── models/              # Database models
-│   │   ├── Issue.js         # Issue schema
-│   │   └── User.js          # User schema
+│   │   ├── Issue.js         # Issue schema with updates tracking
+│   │   └── User.js          # User schema with notifications
 │   ├── routes/              # API routes
 │   │   ├── issueRoutes.js   # Issue endpoints
-│   │   └── userRoutes.js    # User endpoints
+│   │   └── userRoutes.js    # User and notification endpoints
 │   ├── uploads/             # File upload directory
 │   ├── server.js           # Main server file
+│   ├── testNotifications.js # Notification system test script
 │   ├── package.json        # Backend dependencies
 │   └── .env                # Environment variables
 ├── README.md               # This file
@@ -374,8 +390,26 @@ POST /api/users/login
 
 #### User Profile
 ```http
-GET /api/users/profile
+GET /api/users/profile/:clerkId
 PUT /api/users/profile
+POST /api/users/profile
+```
+
+### Notification Endpoints
+
+#### Get User Notifications
+```http
+GET /api/users/notifications/:clerkId?limit=20&unreadOnly=false
+```
+
+#### Mark Notification as Read
+```http
+PUT /api/users/notifications/:clerkId/:notificationId/read
+```
+
+#### Mark All Notifications as Read
+```http
+PUT /api/users/notifications/:clerkId/read-all
 ```
 
 ### Issue Management Endpoints
@@ -591,20 +625,32 @@ VITE_DEBUG=true npm run dev
 ### Upcoming Features
 
 - [ ] **Mobile App**: React Native mobile application
-- [ ] **Real-time Notifications**: WebSocket integration
+- [ ] **Real-time Notifications**: WebSocket integration for instant updates
+- [ ] **Push Notifications**: Browser and mobile push notifications
 - [ ] **Advanced Analytics**: Detailed reporting dashboard
 - [ ] **Multi-language Support**: Internationalization
 - [ ] **API Rate Limiting**: Enhanced security
-- [ ] **Cloud Storage**: AWS S3 integration
-- [ ] **Email Notifications**: Automated status updates
+- [ ] **Cloud Storage**: AWS S3 integration for file uploads
+- [ ] **Email Notifications**: Automated status updates via email
 - [ ] **Social Sharing**: Share issues on social media
+- [ ] **Notification Preferences**: Customize notification settings
+- [ ] **Dark Mode**: Theme toggle for better user experience
 
-### Version History
+### Recent Updates
 
-- **v1.0.0** - Initial release with core features
-- **v1.1.0** - Added admin dashboard
-- **v1.2.0** - Enhanced file upload system
+- **v1.4.0** (Current) - Added real-time notification system
+  - Notification dropdown with smooth animations
+  - Auto-refresh every 30 seconds
+  - Different notification types (resolved, rejected, in-progress, comment)
+  - Mark as read functionality
+  - Enhanced UI with color-coded notifications
+  - Smooth animations and transitions
+  - Hidden scrollbars for cleaner look
+
 - **v1.3.0** - Improved authentication flow
+- **v1.2.0** - Enhanced file upload system
+- **v1.1.0** - Added admin dashboard
+- **v1.0.0** - Initial release with core features
 
 ## 📞 Support
 
