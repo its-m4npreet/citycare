@@ -17,6 +17,56 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Hide all scrollbars but keep scroll functionality */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+*::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Show thin horizontal scrollbar for tables */
+table,
+.table-container,
+[role="table"],
+.overflow-x-auto {
+  scrollbar-width: thin; /* Firefox - thin scrollbar */
+  scrollbar-color: #d1d5db transparent; /* Firefox - thumb and track */
+}
+
+table::-webkit-scrollbar,
+.table-container::-webkit-scrollbar,
+[role="table"]::-webkit-scrollbar,
+.overflow-x-auto::-webkit-scrollbar {
+  width: 0px; /* Vertical scrollbar hidden */
+  height: 6px; /* Horizontal scrollbar thin */
+}
+
+table::-webkit-scrollbar-track:horizontal,
+.table-container::-webkit-scrollbar-track:horizontal,
+[role="table"]::-webkit-scrollbar-track:horizontal,
+.overflow-x-auto::-webkit-scrollbar-track:horizontal {
+  background: #f3f4f6;
+  border-radius: 3px;
+}
+
+table::-webkit-scrollbar-thumb:horizontal,
+.table-container::-webkit-scrollbar-thumb:horizontal,
+[role="table"]::-webkit-scrollbar-thumb:horizontal,
+.overflow-x-auto::-webkit-scrollbar-thumb:horizontal {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+table::-webkit-scrollbar-thumb:horizontal:hover,
+.table-container::-webkit-scrollbar-thumb:horizontal:hover,
+[role="table"]::-webkit-scrollbar-thumb:horizontal:hover,
+.overflow-x-auto::-webkit-scrollbar-thumb:horizontal:hover {
+  background: #9ca3af;
+}
+
 /* Force Clerk components to use light theme */
 .cl-rootBox,
 .cl-card,

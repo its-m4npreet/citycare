@@ -6,7 +6,7 @@ import {
   useUser,
 } from "@clerk/clerk-react";
 import { Link, useLocation } from "react-router-dom";
-import { IoMdNotificationsOutline } from "react-icons/io";
+import NotificationDropdown from "./NotificationDropdown";
 
 
 export default function Navbar({ onMenuClick, mobileSidebarOpen }) {
@@ -111,21 +111,8 @@ export default function Navbar({ onMenuClick, mobileSidebarOpen }) {
           <SignedIn>
             {!isLandingPage && (
               <>
-                {/* Notification button */}
-                <button
-                  aria-label="Notifications"
-                  className="relative rounded-md hover:bg-green-100 border border-gray-400 hover:border-green-600  cursor-pointer"
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3px' }}
-                >
-                 <IoMdNotificationsOutline className="h-6 w-6 text-gray-700" />
-
-                  {/* unread badge (static for now) */}
-                  <span
-                    className="absolute top-0 right-0 inline-flex items-center justify-center w-2 h-2 text-xs font-semibold text-white bg-red-600 rounded-full"
-                    style={{ transform: 'translate(50%,-30%)' }}
-                  >
-                  </span>
-                </button>
+                {/* Notification Dropdown */}
+                <NotificationDropdown />
 
                 <Link
                   to="/profile"

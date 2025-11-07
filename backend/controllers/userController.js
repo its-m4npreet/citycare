@@ -247,3 +247,127 @@ exports.deleteUser = async (req, res) => {
     });
   }
 };
+
+// @desc    Get user notifications
+// @route   GET /api/users/notifications/:clerkId
+// @access  Public
+exports.getUserNotifications = async (req, res) => {
+  try {
+    const { clerkId } = req.params;
+    const { limit = 20, unreadOnly = false } = req.query;
+
+    const user = await User.findOne({ clerkId }).populate({
+      path: 'notifications.issueId',
+      select: 'title status category'
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    let notifications = user.notifications;
+
+    // Filter for unread only if requested
+    if (unreadOnly === 'true') {
+      notifications = notifications.filter(n => !n.isRead);
+    }
+
+    // Limit the number of notifications
+    notifications = notifications.slice(0, parseInt(limit));
+
+    res.status(200).json({
+      success: true,
+      data: notifications,
+      unreadCount: user.notifications.filter(n => !n.isRead).length
+    });
+  } catch (error) {
+    console.error('Error in getUserNotifications:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching notifications',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Mark notification as read
+// @route   PUT /api/users/notifications/:clerkId/:notificationId/read
+// @access  Public
+exports.markNotificationAsRead = async (req, res) => {
+  try {
+    const { clerkId, notificationId } = req.params;
+
+    const user = await User.findOne({ clerkId });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const notification = user.notifications.id(notificationId);
+
+    if (!notification) {
+      return res.status(404).json({
+        success: false,
+        message: 'Notification not found'
+      });
+    }
+
+    notification.isRead = true;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Notification marked as read',
+      data: notification
+    });
+  } catch (error) {
+    console.error('Error in markNotificationAsRead:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error marking notification as read',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Mark all notifications as read
+// @route   PUT /api/users/notifications/:clerkId/read-all
+// @access  Public
+exports.markAllNotificationsAsRead = async (req, res) => {
+  try {
+    const { clerkId } = req.params;
+
+    const user = await User.findOne({ clerkId });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    user.notifications.forEach(notification => {
+      notification.isRead = true;
+    });
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'All notifications marked as read'
+    });
+  } catch (error) {
+    console.error('Error in markAllNotificationsAsRead:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error marking all notifications as read',
+      error: error.message
+    });
+  }
+};

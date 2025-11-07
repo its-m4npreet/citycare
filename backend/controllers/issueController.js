@@ -329,6 +329,8 @@ exports.updateIssue = async (req, res) => {
       });
     }
 
+    const oldStatus = issue.status;
+
     // Update fields
     if (title) issue.title = title;
     if (description) issue.description = description;
@@ -341,8 +343,47 @@ exports.updateIssue = async (req, res) => {
 
     // Update user stats if status changed
     if (status) {
+      console.log('🔔 Status update detected:', { oldStatus, newStatus: status, userId: issue.userId });
       const user = await User.findById(issue.userId);
-      if (user) await user.updateStats();
+      
+      if (!user) {
+        console.error('❌ User not found for issue:', issue.userId);
+      } else {
+        console.log('✅ User found:', { clerkId: user.clerkId, email: user.email });
+        await user.updateStats();
+        
+        // Create notification for user if status changed
+        if (status !== oldStatus) {
+          let notificationMessage = '';
+          let notificationType = 'status_update';
+          
+          switch (status) {
+            case 'in-progress':
+              notificationMessage = `Your issue "${issue.title}" is now being worked on.`;
+              notificationType = 'status_update';
+              break;
+            case 'resolved':
+              notificationMessage = `Your issue "${issue.title}" has been resolved!`;
+              notificationType = 'resolved';
+              break;
+            case 'rejected':
+              notificationMessage = `Your issue "${issue.title}" has been rejected.`;
+              notificationType = 'rejected';
+              break;
+            default:
+              notificationMessage = `Your issue "${issue.title}" status has been updated to ${status}.`;
+              notificationType = 'status_update';
+          }
+          
+          console.log('🔔 Adding notification:', { message: notificationMessage, type: notificationType });
+          user.addNotification(issue._id, notificationMessage, notificationType);
+          await user.save();
+          console.log('✅ Notification saved! User now has', user.notifications.length, 'notifications');
+          console.log('✅ Latest notification:', user.notifications[0]);
+        } else {
+          console.log('ℹ️ Status unchanged, no notification created');
+        }
+      }
     }
 
     res.status(200).json({
@@ -383,13 +424,58 @@ exports.addIssueUpdate = async (req, res) => {
       });
     }
 
+    const oldStatus = issue.status;
+
     issue.addUpdate(message, updatedBy, status);
     await issue.save();
 
     // Update user stats if status changed
     if (status) {
+      console.log('🔔 addIssueUpdate: Status update detected:', { oldStatus, newStatus: status, userId: issue.userId });
       const user = await User.findById(issue.userId);
-      if (user) await user.updateStats();
+      
+      if (!user) {
+        console.error('❌ addIssueUpdate: User not found for issue:', issue.userId);
+      } else {
+        console.log('✅ addIssueUpdate: User found:', { clerkId: user.clerkId, email: user.email });
+        await user.updateStats();
+        
+        // Create notification for user
+        if (status !== oldStatus) {
+          let notificationMessage = '';
+          let notificationType = 'status_update';
+          
+          switch (status) {
+            case 'in-progress':
+              notificationMessage = `Your issue "${issue.title}" is now being worked on.`;
+              notificationType = 'status_update';
+              break;
+            case 'resolved':
+              notificationMessage = `Your issue "${issue.title}" has been resolved!`;
+              notificationType = 'resolved';
+              break;
+            case 'rejected':
+              notificationMessage = `Your issue "${issue.title}" has been rejected.`;
+              notificationType = 'rejected';
+              break;
+            default:
+              notificationMessage = `Your issue "${issue.title}" status has been updated to ${status}.`;
+              notificationType = 'status_update';
+          }
+          
+          console.log('🔔 addIssueUpdate: Adding notification:', { message: notificationMessage, type: notificationType });
+          user.addNotification(issue._id, notificationMessage, notificationType);
+          await user.save();
+          console.log('✅ addIssueUpdate: Notification saved!');
+        } else {
+          // Even if status didn't change, notify about the comment/update
+          const notificationMessage = `Admin added an update to your issue: "${issue.title}"`;
+          console.log('🔔 addIssueUpdate: Adding comment notification');
+          user.addNotification(issue._id, notificationMessage, 'comment');
+          await user.save();
+          console.log('✅ addIssueUpdate: Comment notification saved!');
+        }
+      }
     }
 
     res.status(200).json({

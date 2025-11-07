@@ -31,4 +31,25 @@ export const userService = {
       method: 'DELETE',
     });
   },
+
+  // Get user notifications
+  getUserNotifications: async (clerkId, unreadOnly = false, limit = 20) => {
+    const queryParams = new URLSearchParams();
+    if (unreadOnly) queryParams.append('unreadOnly', 'true');
+    if (limit) queryParams.append('limit', limit);
+    
+    const queryString = queryParams.toString();
+    const response = await apiCall(`/users/notifications/${clerkId}${queryString ? `?${queryString}` : ''}`);
+    return response;
+  },
+
+  // Mark notification as read
+  markNotificationAsRead: async (clerkId, notificationId) => {
+    return jsonRequest(`/users/notifications/${clerkId}/${notificationId}/read`, 'PUT');
+  },
+
+  // Mark all notifications as read
+  markAllNotificationsAsRead: async (clerkId) => {
+    return jsonRequest(`/users/notifications/${clerkId}/read-all`, 'PUT');
+  },
 };
