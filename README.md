@@ -667,10 +667,6 @@ VITE_DEBUG=true npm run dev
 - **Discord**: [discord.gg/citycare](https://discord.gg/citycare)
 - **Twitter**: [@citycare_app](https://twitter.com/citycare_app)
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 ## 🙏 Acknowledgments
 
 - **React Team** for the amazing framework
